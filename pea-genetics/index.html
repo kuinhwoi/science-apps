@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>완두 유전 시뮬레이터 — 독립의 법칙</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+<style>
+:root{
+  --bg:#F4F7F1; --card:#FFFFFF; --ink:#1E2A22; --soft:#5F7065;
+  --leaf:#3F7D34; --pod:#1F4A26; --field:#EAF3E2; --line:#D3E0C9;
+  --mark:#CF4A3F; --ok:#2E7D32; --shadow:0 1px 3px rgba(31,74,38,.10);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A15; --card:#1D251E; --ink:#E8EFE6; --soft:#9DAF9B;
+    --leaf:#7FBF6E; --pod:#2E5C34; --field:#243026; --line:#35452F;
+    --shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141A15; --card:#1D251E; --ink:#E8EFE6; --soft:#9DAF9B;
+  --leaf:#7FBF6E; --pod:#2E5C34; --field:#243026; --line:#35452F;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+  line-height:1.6;font-size:15px;overscroll-behavior:none;}
+.wrap{max-width:560px;margin:0 auto;padding:14px 13px 44px;}
+
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:11px;}
+header h1{font-size:17px;margin:0;font-weight:800;letter-spacing:-.4px;}
+header .sub{font-size:11.5px;color:var(--leaf);font-weight:700;}
+.score{background:var(--pod);color:#fff;border-radius:999px;padding:5px 13px;font-size:13px;font-weight:700;white-space:nowrap;transition:.2s;}
+.score.down{background:#C62828;transform:scale(1.12);}
+.score.up{background:var(--ok);transform:scale(1.12);}
+
+.tabs{display:flex;gap:6px;margin-bottom:12px;}
+.tabs button{flex:1;padding:9px;border:1.5px solid var(--line);background:var(--card);color:var(--soft);
+  border-radius:9px;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;}
+.tabs button.on{background:var(--pod);border-color:var(--pod);color:#fff;}
+
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:13px;margin-bottom:11px;box-shadow:var(--shadow);}
+.card h2{font-size:14.5px;margin:0 0 9px;font-weight:800;display:flex;align-items:center;gap:8px;}
+.card h2 .n{background:var(--leaf);color:#fff;min-width:21px;height:21px;padding:0 5px;border-radius:11px;
+  display:grid;place-items:center;font-size:12px;flex:none;}
+.muted{color:var(--soft);font-size:12.5px;}
+.gene{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:700;letter-spacing:.4px;}
+
+.parents{display:flex;align-items:stretch;gap:8px;}
+.parent{flex:1;background:var(--field);border-radius:10px;padding:9px 6px;text-align:center;transition:.15s;}
+.parent.active{outline:3.5px solid #C62828;outline-offset:-2px;}
+.parent.active .lbl{color:#C62828;}
+.parent .lbl{font-size:14px;color:var(--pod);font-weight:800;letter-spacing:-.3px;}
+.parent .gt{font-size:22px;margin:1px 0 3px;}
+.parent .ph{font-size:11px;color:var(--soft);}
+.xmark{display:grid;place-items:center;font-size:17px;color:var(--soft);font-weight:700;}
+
+.steps{display:flex;gap:4px;margin-bottom:11px;}
+.steps div{flex:1;height:5px;border-radius:3px;background:var(--line);}
+.steps div.done{background:var(--leaf);} .steps div.cur{background:var(--pod);}
+
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px;}
+.chip{padding:12px 3px;border:2px solid var(--line);background:var(--card);border-radius:10px;
+  font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:18px;color:var(--ink);cursor:pointer;}
+.chip.sel{background:var(--pod);border-color:var(--pod);color:#fff;}
+.chip.right{border-color:var(--ok);background:rgba(46,125,50,.14);}
+.chip.wrong{border-color:var(--mark);background:rgba(207,74,63,.13);}
+.chip.miss{border-color:var(--mark);border-style:dashed;}
+
+/* 퍼넷 */
+.pun{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:8px;}
+.pun th,.pun td{border:1px solid var(--line);text-align:center;padding:0;height:62px;}
+.pun th{background:var(--field);font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:13.5px;}
+.pun th.c0{background:var(--pod);}
+.pun td{cursor:pointer;position:relative;}
+.pun td .gt{display:block;font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:12px;min-height:15px;color:var(--ink);}
+.pun td .sd{display:block;margin:1px auto 0;width:26px;height:26px;}
+.pun td.bad{outline:2.5px solid var(--mark);outline-offset:-2px;}
+.pun td.good{background:rgba(46,125,50,.10);}
+.pun td.pick{outline:2.5px solid var(--leaf);outline-offset:-2px;}
+
+/* 팔레트 */
+.pal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px;}
+.pal button{padding:10px 2px;border:2px solid var(--line);background:var(--card);border-radius:9px;
+  font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:15px;color:var(--ink);cursor:pointer;}
+.pal button.on{background:var(--pod);border-color:var(--pod);color:#fff;}
+.tray{display:flex;gap:8px;margin-top:9px;justify-content:center;flex-wrap:wrap;}
+.tray .it{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:6px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;cursor:grab;touch-action:none;width:74px;}
+.tray .it.on{border-color:var(--pod);background:var(--field);}
+.tray .it span{font-size:9.5px;color:var(--soft);line-height:1.25;text-align:center;}
+.tray .it svg{width:34px;height:34px;pointer-events:none;}
+.eraser{border:2px dashed var(--line);background:transparent;border-radius:10px;padding:8px 14px;
+  font-family:inherit;font-size:12.5px;font-weight:700;color:var(--soft);cursor:pointer;margin-top:8px;width:100%;}
+.eraser.on{border-color:var(--mark);color:var(--mark);}
+#ghost{position:fixed;z-index:99;pointer-events:none;width:46px;height:46px;margin:-23px 0 0 -23px;display:none;}
+#ghost svg{width:100%;height:100%;}
+.pun td .sd svg{width:100%;height:100%;display:block;}
+
+.ratio{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px;}
+.ratio .lb{text-align:center;font-size:10px;color:var(--soft);line-height:1.2;}
+.ratio svg{width:24px;height:24px;}
+.ratio input{width:100%;margin-top:3px;padding:10px 2px;text-align:center;font-size:18px;font-weight:700;
+  font-family:inherit;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:9px;}
+.ratio input:focus{outline:none;border-color:var(--leaf);}
+
+.btn{width:100%;margin-top:11px;padding:13px;border:0;border-radius:10px;background:var(--leaf);
+  color:#fff;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;}
+.btn.dark{background:var(--pod);}
+.btn:disabled{opacity:.4;cursor:default;}
+.fb{margin-top:10px;padding:10px 12px;border-radius:9px;font-size:13px;line-height:1.55;}
+.fb.ok{background:rgba(46,125,50,.12);border-left:4px solid var(--ok);}
+.fb.no{background:rgba(207,74,63,.11);border-left:4px solid var(--mark);}
+.fb ul{margin:5px 0 0;padding-left:16px;} .fb li{margin:2px 0;}
+.solve{background:var(--field);border-radius:9px;padding:10px 12px;margin-top:9px;font-size:13px;}
+.solve .big{font-size:16px;font-weight:800;text-align:center;margin:7px 0 2px;}
+
+select{width:100%;padding:9px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);
+  color:var(--ink);font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:15px;}
+.selrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:5px;}
+footer{text-align:center;font-size:11.5px;color:var(--soft);margin-top:16px;}
+.hide{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><div class="sub">Ⅴ-3. 멘델의 유전 원리</div><h1>완두 유전 시뮬레이터</h1></div>
+    <div class="score" id="score">0점</div>
+  </header>
+
+  <div class="tabs">
+    <button id="tabQ" class="on" type="button">문제 풀기</button>
+    <button id="tabF" type="button">자유 탐구</button>
+  </div>
+
+  <div id="quiz">
+    <div class="steps" id="steps"><div></div><div></div><div></div><div></div><div></div></div>
+
+    <div class="card">
+      <h2><span class="n">?</span><span id="qtitle">문제 1</span></h2>
+      <div class="parents">
+        <div class="parent" id="par1"><div class="lbl">어버이 ①</div><div class="gt gene" id="p1g"></div><div class="ph" id="p1p"></div></div>
+        <div class="xmark">×</div>
+        <div class="parent" id="par2"><div class="lbl">어버이 ②</div><div class="gt gene" id="p2g"></div><div class="ph" id="p2p"></div></div>
+      </div>
+    </div>
+
+    <div class="card" id="cardG">
+      <h2><span class="n" id="gn">1</span><span id="gtitle"></span></h2>
+      <div class="muted">한 생식세포에는 <b>모양 유전자 1개 + 색깔 유전자 1개</b>가 들어갑니다.</div>
+      <div class="chips" id="chips"></div>
+      <div id="gfb"></div>
+      <button class="btn" id="gbtn" type="button">채점하기</button>
+    </div>
+
+    <div class="card hide" id="cardT">
+      <h2><span class="n" id="tn">3</span><span id="ttitle"></span></h2>
+      <div class="muted" id="thint"></div>
+      <table class="pun" id="pun"></table>
+      <div id="tools"></div>
+      <div id="tfb"></div>
+      <button class="btn" id="tbtn" type="button">채점하기</button>
+    </div>
+
+    <div class="card hide" id="cardR">
+      <h2><span class="n">5</span>표현형 비를 가장 간단한 정수비로</h2>
+      <div class="ratio" id="ratiobox"></div>
+      <div id="rfb"></div>
+      <button class="btn" id="rbtn" type="button">채점하기</button>
+    </div>
+
+    <div class="card hide" id="cardS">
+      <h2><span class="n">★</span>정리</h2>
+      <div id="solve"></div>
+      <button class="btn dark" id="nextbtn" type="button">다음 문제 →</button>
+    </div>
+  </div>
+
+  <div id="free" class="hide">
+    <div class="card">
+      <h2><span class="n">🧪</span>어버이 유전자형을 직접 정해 보세요</h2>
+      <div style="margin-top:6px"><div class="muted" style="font-weight:700">어버이 ①</div>
+        <div class="selrow">
+          <select id="f1s"><option>RR</option><option selected>Rr</option><option>rr</option></select>
+          <select id="f1c"><option>YY</option><option selected>Yy</option><option>yy</option></select>
+        </div></div>
+      <div style="margin-top:9px"><div class="muted" style="font-weight:700">어버이 ②</div>
+        <div class="selrow">
+          <select id="f2s"><option>RR</option><option selected>Rr</option><option>rr</option></select>
+          <select id="f2c"><option>YY</option><option selected>Yy</option><option>yy</option></select>
+        </div></div>
+    </div>
+    <div class="card"><div id="fout"></div></div>
+  </div>
+
+  <footer>과학교사 구인회</footer>
+</div>
+<div id="ghost"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+/* ================= 씨앗 그림 ================= */
+var COL=[
+  {f:'#F3C83C',d:'#D6A21E',e:'#7E6212'},   // 노랑
+  {f:'#7CB042',d:'#5F922F',e:'#2F5A1E'}    // 초록
+];
+function blob(cx,cy,r,amp,lobes,n){
+  var p='',i,t,rr,x,y;
+  for(i=0;i<n;i++){
+    t=2*Math.PI*i/n; rr=r*(1+amp*Math.cos(lobes*t));
+    x=cx+rr*Math.cos(t); y=cy+rr*Math.sin(t);
+    p+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);
+  }
+  return p+'Z';
+}
+function seedSVG(k){          // 0 둥근노랑 1 둥근초록 2 주름노랑 3 주름초록
+  var round=k<2, c=COL[k%2];
+  var s='<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">';
+  if(round){
+    s+='<circle cx="50" cy="52" r="42" fill="'+c.d+'"/>';
+    s+='<circle cx="50" cy="48" r="40" fill="'+c.f+'" stroke="'+c.e+'" stroke-width="4"/>';
+    s+='<ellipse cx="36" cy="34" rx="9" ry="6" fill="#fff" opacity=".55"/>';
+  } else {
+    s+='<path d="'+blob(50,53,39,0.20,9,144)+'" fill="'+c.d+'"/>';
+    s+='<path d="'+blob(50,49,38,0.20,9,144)+'" fill="'+c.f+'" stroke="'+c.e+'" stroke-width="4" stroke-linejoin="round"/>';
+    s+='<g fill="none" stroke="'+c.e+'" stroke-width="3.4" stroke-linecap="round" opacity=".55">';
+    s+='<path d="M28 44 Q40 36 52 45"/><path d="M34 60 Q48 52 63 61"/><path d="M52 32 Q58 44 50 56"/>';
+    s+='</g>';
+    s+='<ellipse cx="36" cy="35" rx="7.5" ry="5" fill="#fff" opacity=".5"/>';
+  }
+  return s+'</svg>';
+}
+var PHN=['둥근 노란색','둥근 초록색','주름진 노란색','주름진 초록색'];
+
+/* ================= 유전 계산 ================= */
+var ORDER=['RY','Ry','rY','ry'], SHAPE=['R','r'], COLOR=['Y','y'];
+var ALLGT=['RRYY','RRYy','RRyy','RrYY','RrYy','Rryy','rrYY','rrYy','rryy'];
+function uniq(p){var a=[];for(var i=0;i<p.length;i++)if(a.indexOf(p[i])<0)a.push(p[i]);return a;}
+function gametes(p){var o=[],s=uniq(p.s),c=uniq(p.c);
+  for(var i=0;i<s.length;i++)for(var j=0;j<c.length;j++)o.push(s[i]+c[j]);
+  return o.sort(function(a,b){return ORDER.indexOf(a)-ORDER.indexOf(b);});}
+function combine(a,b){
+  var s=[a[0],b[0]].sort(function(x,y){return SHAPE.indexOf(x)-SHAPE.indexOf(y);}).join('');
+  var c=[a[1],b[1]].sort(function(x,y){return COLOR.indexOf(x)-COLOR.indexOf(y);}).join('');
+  return s+c;}
+function phen(g){return (g.indexOf('R')>=0?0:2)+(g.indexOf('Y')>=0?0:1);}
+function gcd(a,b){return b?gcd(b,a%b):a;}
+function reduce(a){var g=0;for(var i=0;i<a.length;i++)if(a[i])g=gcd(g,a[i]);
+  return g?a.map(function(v){return v/g;}):a.slice();}
+function phLabel(p){return (p.s.indexOf('R')>=0?'둥근':'주름진')+' '+(p.c.indexOf('Y')>=0?'노란색':'초록색');}
+function ratio2(a,b){var A=uniq(a),B=uniq(b),d=0,r=0;
+  for(var i=0;i<A.length;i++)for(var j=0;j<B.length;j++){
+    var p=A[i]+B[j];
+    if(p[0]===p[0].toUpperCase()||p[1]===p[1].toUpperCase())d++;else r++;}
+  return reduce([d,r]);}
+
+/* ================= 상태 ================= */
+var idx=0, step=1, score=0, tries=0, ratioDone=false, prob=null, P=null, sel=[], gcell=[], pcell=[], armed=null, armKind=null, eraseOn=false, last='';
+var CHIPS=['RY','Ry','rY','ry','RR','Yy'];
+
+function randProb(){
+  var S=['RR','Rr','rr'], C=['YY','Yy','yy'], p, key, guard=0;
+  do{
+    p={p1:{s:S[Math.floor(Math.random()*3)], c:C[Math.floor(Math.random()*3)]},
+       p2:{s:S[Math.floor(Math.random()*3)], c:C[Math.floor(Math.random()*3)]}};
+    key=p.p1.s+p.p1.c+'|'+p.p2.s+p.p2.c;
+    var n=gametes(p.p1).length*gametes(p.p2).length;
+  }while((n<2 || key===last) && ++guard<40);
+  last=key; return p;
+}
+
+function load(){
+  prob=randProb();
+  P={g1:gametes(prob.p1), g2:gametes(prob.p2), counts:[0,0,0,0]};
+  P.grid=P.g2.map(function(b){return P.g1.map(function(a){return combine(a,b);});});
+  P.grid.forEach(function(r){r.forEach(function(g){P.counts[phen(g)]++;});});
+  P.ratio=reduce(P.counts);
+  step=1; tries=0; sel=[]; armed=null; armKind=null; ratioDone=false;
+  $('tbtn').disabled=false; $('rbtn').disabled=false;
+  $('qtitle').textContent='문제 '+(idx+1);
+  $('p1g').textContent=prob.p1.s+prob.p1.c; $('p2g').textContent=prob.p2.s+prob.p2.c;
+  $('p1p').textContent=phLabel(prob.p1);   $('p2p').textContent=phLabel(prob.p2);
+  ['cardT','cardR','cardS'].forEach(function(i){$(i).classList.add('hide');});
+  $('cardG').classList.remove('hide');
+  $('gfb').innerHTML=''; $('tfb').innerHTML=''; $('rfb').innerHTML='';
+  renderChips(); drawSteps(); window.scrollTo(0,0);
+}
+function highlight(n){
+  $('par1').classList.toggle('active', n===1);
+  $('par2').classList.toggle('active', n===2);
+}
+function drawSteps(){var d=$('steps').children;
+  for(var i=0;i<5;i++) d[i].className=(i+1<step)?'done':(i+1===step?'cur':'');}
+function updateScore(){$('score').textContent=score+'점';}
+function addScore(n){
+  score=Math.max(0, score+n); updateScore();
+  var el=$('score'); el.classList.remove('up','down');
+  void el.offsetWidth; el.classList.add(n<0?'down':'up');
+  setTimeout(function(){el.classList.remove('up','down');},650);
+}
+function minus(n){return ' <b style="color:#C62828">-'+n+'점</b>';}
+
+/* ---------- 1·2 생식세포 ---------- */
+function renderChips(){
+  $('gn').textContent=step;
+  $('gtitle').textContent='어버이 '+(step===1?'①':'②')+'이 만드는 생식세포 고르기';
+  highlight(step);
+  var h='';
+  CHIPS.forEach(function(g){h+='<button class="chip" type="button" data-g="'+g+'">'+g+'</button>';});
+  $('chips').innerHTML=h; sel=[]; tries=0;
+  $('gbtn').textContent='채점하기'; $('gbtn').onclick=gradeG;
+  Array.prototype.forEach.call($('chips').children,function(b){
+    b.onclick=function(){
+      if(b.classList.contains('right')||b.classList.contains('wrong')||b.classList.contains('miss'))return;
+      var g=b.getAttribute('data-g'), k=sel.indexOf(g);
+      if(k<0){sel.push(g);b.classList.add('sel');}else{sel.splice(k,1);b.classList.remove('sel');}
+    };
+  });
+}
+function gradeG(){
+  if(!sel.length)return;
+  var par=step===1?prob.p1:prob.p2, ans=step===1?P.g1:P.g2, wrong=[],miss=[],why=[];
+  sel.forEach(function(g){if(ans.indexOf(g)<0)wrong.push(g);});
+  ans.forEach(function(g){if(sel.indexOf(g)<0)miss.push(g);});
+  wrong.forEach(function(g){
+    if(ORDER.indexOf(g)<0){
+      why.push('<b>'+g+'</b> — 같은 형질의 유전자 두 개는 한 생식세포에 들어갈 수 없어요.');
+    }else{
+      var bad=[];
+      if(par.s.indexOf(g[0])<0)bad.push(g[0]);
+      if(par.c.indexOf(g[1])<0)bad.push(g[1]);
+      why.push('<b>'+g+'</b> — 이 어버이는 <span class="gene">'+bad.join(', ')+'</span> 유전자가 없어요.');
+    }
+  });
+  if(miss.length)why.push('<b>빠뜨린 것</b> — <span class="gene">'+miss.join(', ')+'</span>');
+  var ok=!wrong.length&&!miss.length; tries++;
+  if(ok){
+    if(tries===1)addScore(3);
+    $('gfb').innerHTML='<div class="fb ok"><span class="gene">'+(par.s+par.c)+'</span>는 모양 '+uniq(par.s).length+
+      '가지 × 색깔 '+uniq(par.c).length+'가지 = <b>'+ans.length+'종류</b>입니다.</div>';
+  }else if(tries===1){
+    addScore(-1);
+    $('gfb').innerHTML='<div class="fb no">다시 살펴보세요.'+minus(1)+'<ul><li>'+why.join('</li><li>')+'</li></ul></div>';
+    return;
+  }else{
+    addScore(-1);
+    $('gfb').innerHTML='<div class="fb no">정답은 <span class="gene">'+ans.join(', ')+'</span>입니다.'+minus(1)+'<ul><li>'+why.join('</li><li>')+'</li></ul></div>';
+  }
+  Array.prototype.forEach.call($('chips').children,function(b){
+    var g=b.getAttribute('data-g'); b.classList.remove('sel');
+    if(ans.indexOf(g)>=0)b.classList.add(sel.indexOf(g)>=0?'right':'miss');
+    else if(sel.indexOf(g)>=0)b.classList.add('wrong');
+  });
+  $('gbtn').textContent = step===1?'어버이 ②로 →':'자손 만들기 →';
+  $('gbtn').onclick=function(){
+    if(step===1){step=2;$('gfb').innerHTML='';renderChips();drawSteps();}
+    else{step=3;highlight(0);$('cardG').classList.add('hide');$('cardT').classList.remove('hide');buildGrid();drawSteps();}
+  };
+  updateScore();
+}
+
+/* ---------- 3·4 퍼넷 ---------- */
+function buildGrid(){
+  gcell=P.grid.map(function(r){return r.map(function(){return '';});});
+  pcell=P.grid.map(function(r){return r.map(function(){return -1;});});
+  var h='<tr><th class="c0"></th>';
+  P.g1.forEach(function(g){h+='<th>'+g+'</th>';});
+  h+='</tr>';
+  P.grid.forEach(function(row,r){
+    h+='<tr><th>'+P.g2[r]+'</th>';
+    row.forEach(function(g,c){h+='<td data-r="'+r+'" data-c="'+c+'"><span class="gt"></span><span class="sd"></span></td>';});
+    h+='</tr>';
+  });
+  $('pun').innerHTML=h;
+  Array.prototype.forEach.call($('pun').querySelectorAll('td'),function(td){
+    td.onclick=function(){ stamp(td); };
+  });
+  startGenoStep();
+}
+function cellEl(r,c){return $('pun').querySelector('td[data-r="'+r+'"][data-c="'+c+'"]');}
+function stamp(td){
+  if(td.classList.contains('lock'))return;
+  if(armed===null && !eraseOn)return;
+  var r=+td.getAttribute('data-r'), c=+td.getAttribute('data-c');
+  if(armKind==='geno'){ gcell[r][c]= armed===null?'':armed; td.querySelector('.gt').textContent=gcell[r][c]; }
+  else if(armKind==='phen'){ pcell[r][c]= armed===null?-1:armed;
+    td.querySelector('.sd').innerHTML = armed===null?'':seedSVG(armed); }
+}
+
+function startGenoStep(){
+  tries=0; armKind='geno'; armed=null;
+  $('tn').textContent='3'; $('ttitle').textContent='자손의 유전자형 채우기';
+  $('thint').innerHTML='아래에서 유전자형을 하나 고른 뒤, 들어갈 칸을 누르세요. <b>가로줄 생식세포 + 세로줄 생식세포</b>를 합치면 됩니다.';
+  var h='<div class="pal" id="pal">';
+  ALLGT.forEach(function(g){h+='<button type="button" data-v="'+g+'">'+g+'</button>';});
+  h+='</div><button class="eraser" id="er" type="button">지우개</button>';
+  $('tools').innerHTML=h;
+  eraseOn=false; bindPal();
+  $('tbtn').textContent='채점하기'; $('tbtn').onclick=gradeGeno;
+}
+function bindPal(){
+  var pal=$('pal');
+  Array.prototype.forEach.call(pal.children,function(b){
+    b.onclick=function(){
+      var on=b.classList.contains('on');
+      Array.prototype.forEach.call(pal.children,function(x){x.classList.remove('on');});
+      $('er').classList.remove('on');
+      eraseOn=false;
+      if(on){armed=null;}else{b.classList.add('on');armed=b.getAttribute('data-v');}
+    };
+  });
+  $('er').onclick=function(){
+    var on=$('er').classList.contains('on');
+    Array.prototype.forEach.call(pal.children,function(x){x.classList.remove('on');});
+    $('er').classList.toggle('on',!on);
+    armed=null; eraseOn=!on;
+  };
+}
+function gradeGeno(){
+  var bad=0, blank=0;
+  P.grid.forEach(function(row,r){row.forEach(function(g,c){
+    var td=cellEl(r,c); td.classList.remove('bad','good');
+    if(!gcell[r][c]){blank++;td.classList.add('bad');}
+    else if(gcell[r][c]!==g){bad++;td.classList.add('bad');}
+    else td.classList.add('good');
+  });});
+  if(blank && !bad){ $('tfb').innerHTML='<div class="fb no">아직 비어 있는 칸이 '+blank+'개 있어요.</div>'; return; }
+  tries++;
+  if(!bad && !blank){
+    if(tries===1)addScore(4);
+    $('tfb').innerHTML='<div class="fb ok">모두 맞았습니다. 생식세포 두 개가 만나 자손의 유전자형이 만들어집니다.</div>';
+  }else if(tries===1){
+    addScore(-2);
+    $('tfb').innerHTML='<div class="fb no">빨간 칸 '+(bad+blank)+'개를 다시 보세요. 칸의 왼쪽 끝 유전자와 맨 윗줄 유전자를 합치면 됩니다.'+minus(2)+'</div>';
+    return;
+  }else{
+    addScore(-2);
+    $('tfb').innerHTML='<div class="fb no">정답으로 채워 넣었습니다. 빨간 칸이었던 곳을 확인해 보세요.'+minus(2)+'</div>';
+    P.grid.forEach(function(row,r){row.forEach(function(g,c){
+      gcell[r][c]=g; cellEl(r,c).querySelector('.gt').textContent=g;});});
+  }
+  $('tbtn').textContent='겉모습 채우기 →';
+  $('tbtn').onclick=startPhenStep;
+  updateScore();
+}
+
+function startPhenStep(){
+  step=4; drawSteps(); tries=0; armKind='phen'; armed=null;
+  Array.prototype.forEach.call($('pun').querySelectorAll('td'),function(td){td.classList.remove('bad','good');});
+  $('tn').textContent='4'; $('ttitle').textContent='자손의 겉모습 채우기';
+  $('thint').innerHTML='완두 그림을 칸으로 <b>끌어다 놓거나</b>, 그림을 한 번 누른 뒤 칸을 누르세요. 우성 유전자가 하나라도 있으면 우성 형질입니다.';
+  var h='<div class="tray" id="tray">';
+  for(var i=0;i<4;i++) h+='<div class="it" data-v="'+i+'">'+seedSVG(i)+'<span>'+PHN[i].replace(' ','<br>')+'</span></div>';
+  h+='</div><button class="eraser" id="er" type="button">지우개</button>';
+  $('tools').innerHTML=h;
+  eraseOn=false; bindTray();
+  $('tfb').innerHTML='';
+  $('tbtn').textContent='채점하기'; $('tbtn').onclick=gradePhen;
+  window.scrollTo(0,document.body.scrollHeight);
+}
+function bindTray(){
+  var tray=$('tray');
+  function clear(){Array.prototype.forEach.call(tray.children,function(x){x.classList.remove('on');});$('er').classList.remove('on');}
+  Array.prototype.forEach.call(tray.children,function(it){
+    var sx=0,sy=0,moved=false;
+    it.addEventListener('pointerdown',function(e){
+      sx=e.clientX; sy=e.clientY; moved=false;
+      it.setPointerCapture(e.pointerId);
+      var g=$('ghost'); g.innerHTML=seedSVG(+it.getAttribute('data-v'));
+      g.style.left=e.clientX+'px'; g.style.top=e.clientY+'px';
+    });
+    it.addEventListener('pointermove',function(e){
+      if(!it.hasPointerCapture(e.pointerId))return;
+      if(Math.abs(e.clientX-sx)>8||Math.abs(e.clientY-sy)>8){
+        moved=true; var g=$('ghost'); g.style.display='block';
+        g.style.left=e.clientX+'px'; g.style.top=e.clientY+'px';
+      }
+    });
+    it.addEventListener('pointerup',function(e){
+      $('ghost').style.display='none';
+      if(moved){
+        var el=document.elementFromPoint(e.clientX,e.clientY);
+        while(el && el.tagName!=='TD') el=el.parentElement;
+        if(el && el.closest('#pun')){ var keep=armed,kk=armKind,ke=eraseOn;
+          armed=+it.getAttribute('data-v'); armKind='phen'; eraseOn=false; stamp(el);
+          armed=keep; armKind=kk; eraseOn=ke; }
+      }else{
+        var on=it.classList.contains('on'); clear(); eraseOn=false;
+        if(!on){it.classList.add('on');armed=+it.getAttribute('data-v');armKind='phen';}
+        else armed=null;
+      }
+    });
+  });
+  $('er').onclick=function(){
+    var on=$('er').classList.contains('on'); clear();
+    armed=null; armKind='phen'; eraseOn=!on;
+    if(!on)$('er').classList.add('on');
+  };
+}
+function gradePhen(){
+  var bad=0, blank=0;
+  P.grid.forEach(function(row,r){row.forEach(function(g,c){
+    var td=cellEl(r,c); td.classList.remove('bad','good');
+    if(pcell[r][c]<0){blank++;td.classList.add('bad');}
+    else if(pcell[r][c]!==phen(g)){bad++;td.classList.add('bad');}
+    else td.classList.add('good');
+  });});
+  if(blank && !bad){$('tfb').innerHTML='<div class="fb no">아직 비어 있는 칸이 '+blank+'개 있어요.</div>';return;}
+  tries++;
+  if(!bad && !blank){
+    if(tries===1)addScore(4);
+    $('tfb').innerHTML='<div class="fb ok">정확합니다. 우성 유전자가 하나라도 있으면 우성 형질이 나타납니다.</div>';
+  }else if(tries===1){
+    addScore(-2);
+    $('tfb').innerHTML='<div class="fb no">빨간 칸 '+(bad+blank)+'개가 틀렸어요. <span class="gene">R</span>이 하나라도 있으면 둥글고, <span class="gene">Y</span>가 하나라도 있으면 노란색입니다.'+minus(2)+'</div>';
+    return;
+  }else{
+    addScore(-2);
+    $('tfb').innerHTML='<div class="fb no">정답으로 채워 넣었습니다.'+minus(2)+'</div>';
+    P.grid.forEach(function(row,r){row.forEach(function(g,c){
+      pcell[r][c]=phen(g); cellEl(r,c).querySelector('.sd').innerHTML=seedSVG(phen(g));});});
+  }
+  Array.prototype.forEach.call($('pun').querySelectorAll('td'),function(td){td.classList.add('lock');});
+  $('tbtn').textContent='비율 구하기 →';
+  $('tbtn').onclick=function(){
+    $('tbtn').disabled=true;
+    step=5; drawSteps(); $('cardR').classList.remove('hide');
+    var h='';
+    for(var i=0;i<4;i++) h+='<div><div class="lb">'+seedSVG(i)+'<br>'+PHN[i].replace(' ','<br>')+'</div><input id="r'+i+'" type="number" inputmode="numeric" min="0"></div>';
+    $('ratiobox').innerHTML=h;
+    tries=0; $('rbtn').textContent='채점하기'; $('rbtn').onclick=gradeR;
+    window.scrollTo(0,document.body.scrollHeight);
+  };
+  updateScore();
+}
+
+/* ---------- 5 비율 ---------- */
+function gradeR(){
+  if(ratioDone)return;
+  var v=[0,1,2,3].map(function(i){return +$('r'+i).value||0;});
+  if(v.every(function(x){return x===0;}))return;
+  var ok=reduce(v).join(':')===P.ratio.join(':'); tries++;
+  if(ok){ if(tries===1)addScore(3);
+    $('rfb').innerHTML='<div class="fb ok">맞았습니다. <b>'+P.ratio.join(' : ')+'</b></div>';
+  }else if(tries===1){
+    addScore(-1);
+    $('rfb').innerHTML='<div class="fb no">표에서 같은 겉모습 칸이 몇 개인지 센 뒤, 가장 작은 수로 나눠 보세요.'+minus(1)+'</div>';return;
+  }else{
+    addScore(-1);
+    $('rfb').innerHTML='<div class="fb no">정답은 <b>'+P.ratio.join(' : ')+'</b>입니다. (칸 수 '+P.counts.join(' : ')+')'+minus(1)+'</div>';
+  }
+  ratioDone=true;
+  [0,1,2,3].forEach(function(i){$('r'+i).disabled=true;});
+  $('rbtn').textContent='정리 보기 →'; $('rbtn').onclick=showSolve; updateScore();
+}
+function showSolve(){
+  var sr=ratio2(prob.p1.s,prob.p2.s), cr=ratio2(prob.p1.c,prob.p2.c);
+  var h='<div class="solve">두 형질은 서로 영향을 주지 않으므로 <b>따로 구해서 곱하면</b> 됩니다.';
+  h+='<div style="margin-top:6px">씨 모양 <span class="gene">'+prob.p1.s+'</span> × <span class="gene">'+prob.p2.s+'</span> → 둥근 : 주름진 = <b>'+sr.join(' : ')+'</b></div>';
+  h+='<div>씨 색깔 <span class="gene">'+prob.p1.c+'</span> × <span class="gene">'+prob.p2.c+'</span> → 노란색 : 초록색 = <b>'+cr.join(' : ')+'</b></div>';
+  h+='<div class="big">( '+sr.join(' : ')+' ) × ( '+cr.join(' : ')+' ) = '+P.ratio.join(' : ')+'</div></div>';
+  $('solve').innerHTML=h;
+  $('cardR').classList.add('hide'); $('cardS').classList.remove('hide');
+  window.scrollTo(0,document.body.scrollHeight);
+}
+$('nextbtn').onclick=function(){idx++;load();};
+
+/* ---------- 자유 탐구 ---------- */
+function freeRun(){
+  var p1={s:$('f1s').value,c:$('f1c').value}, p2={s:$('f2s').value,c:$('f2c').value};
+  var g1=gametes(p1), g2=gametes(p2), cnt=[0,0,0,0];
+  var h='<h2><span class="n">→</span>결과</h2><div class="muted"><span class="gene">'+(p1.s+p1.c)+'</span> → <span class="gene">'+g1.join(', ')+'</span> ('+g1.length+'종류)<br><span class="gene">'+(p2.s+p2.c)+'</span> → <span class="gene">'+g2.join(', ')+'</span> ('+g2.length+'종류)</div>';
+  h+='<table class="pun"><tr><th class="c0"></th>';
+  g1.forEach(function(g){h+='<th>'+g+'</th>';}); h+='</tr>';
+  g2.forEach(function(b){h+='<tr><th>'+b+'</th>';
+    g1.forEach(function(a){var gt=combine(a,b),p=phen(gt);cnt[p]++;
+      h+='<td><span class="gt">'+gt+'</span><span class="sd">'+seedSVG(p)+'</span></td>';});
+    h+='</tr>';});
+  h+='</table>';
+  var rr=reduce(cnt);
+  h+='<div class="solve">씨 모양 <b>'+ratio2(p1.s,p2.s).join(' : ')+'</b> / 씨 색깔 <b>'+ratio2(p1.c,p2.c).join(' : ')+'</b><div class="big">표현형 비 '+rr.join(' : ')+'</div></div>';
+  $('fout').innerHTML=h;
+}
+['f1s','f1c','f2s','f2c'].forEach(function(id){$(id).onchange=freeRun;});
+$('tabQ').onclick=function(){$('tabQ').classList.add('on');$('tabF').classList.remove('on');
+  $('quiz').classList.remove('hide');$('free').classList.add('hide');};
+$('tabF').onclick=function(){$('tabF').classList.add('on');$('tabQ').classList.remove('on');
+  $('free').classList.remove('hide');$('quiz').classList.add('hide');freeRun();};
+
+load();
+})();
+</script>
+</body>
+</html>
