@@ -1,0 +1,388 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>연주 시차 사진 탐정</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one observing-log column — problem card, the two photo plates on a light table, then the answer log. */
+:root{
+  --bg:#eef2f7; --surface:#ffffff; --ink:#18233a; --muted:#5d6b82; --line:#d5dde9;
+  --accent:#d98a1c; --accent-ink:#8a5208; --cyan:#1d9bb0; --good:#1f8a4c; --good-bg:#e3f4ea; --bad:#c43c2f; --bad-bg:#fbe7e4;
+  --plate:#0b1a3a; --plate-grid:#4d6aa3; --chip:#e6ecf5;
+  --f-display:"Do Hyeon","Noto Sans KR",system-ui,sans-serif;
+  --f-body:"Noto Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1424; --surface:#161f34; --ink:#e6ecf7; --muted:#9aa8c2; --line:#2a3754;
+  --accent:#f0a83a; --accent-ink:#f6c46f; --cyan:#5fd0e2; --good:#5cc98a; --good-bg:#16352a; --bad:#ff8a7a; --bad-bg:#3d1d1d;
+  --plate:#071230; --plate-grid:#4d6aa3; --chip:#22304d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1424; --surface:#161f34; --ink:#e6ecf7; --muted:#9aa8c2; --line:#2a3754;
+  --accent:#f0a83a; --accent-ink:#f6c46f; --cyan:#5fd0e2; --good:#5cc98a; --good-bg:#16352a; --bad:#ff8a7a; --bad-bg:#3d1d1d;
+  --plate:#071230; --plate-grid:#4d6aa3; --chip:#22304d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
+.wrap{max-width:1000px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:grid;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 20px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,5vw,40px);line-height:1.1;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1 small{display:block;font-family:var(--f-body);font-size:13px;color:var(--muted);letter-spacing:.08em;margin-bottom:6px}
+.tally{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--chip);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--muted)}
+.chip b{color:var(--ink);font-family:var(--f-mono)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px clamp(14px,3vw,24px);display:grid;gap:14px;min-width:0}
+.prob{font-weight:700}
+.scale{font-family:var(--f-mono);color:var(--accent-ink);background:var(--chip);padding:1px 7px;border-radius:6px}
+.prob .tag{font-family:var(--f-display);font-weight:400;color:var(--accent-ink);margin-right:6px;font-size:18px}
+.opts{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--muted)}
+.opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
+/* stage */
+.stage{position:relative;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;padding:14px;border-radius:12px;background:repeating-linear-gradient(45deg,var(--chip) 0 10px,transparent 10px 20px);border:1px dashed var(--line)}
+.plate{flex:1 1 400px;max-width:460px;min-width:0;position:relative;border-radius:8px;user-select:none;-webkit-user-select:none}
+.plate svg{display:block;width:100%;height:auto;border-radius:8px}
+#plate2{cursor:grab;touch-action:none;z-index:2;transition:box-shadow .2s}
+#plate2.dragging{cursor:grabbing;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#plate2.anim{transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+#plate2.blinkoff{visibility:hidden}
+.grip{position:absolute;right:8px;top:8px;background:var(--accent);color:#1a1205;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;pointer-events:none}
+#plate2.over .grip{opacity:.0}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tools .range{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-left:auto}
+button{font:inherit;font-weight:700;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1a1205}
+button.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.hint{font-size:13px;color:var(--muted)}
+/* table */
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:8px;text-align:center}
+th{background:var(--chip);font-weight:700;font-size:14px}
+td.star{font-family:var(--f-display);font-size:22px}
+td.star.ga{color:var(--accent-ink)} td.star.na{color:var(--cyan)}
+td input{width:100%;max-width:120px;font:500 16px var(--f-mono);text-align:center;padding:7px 6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+td input.ok{border-color:var(--good);background:var(--good-bg)}
+td input.no{border-color:var(--bad);background:var(--bad-bg)}
+.unit{font-size:12px;color:var(--muted);display:block;font-weight:400}
+.q2{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+select.ok{border-color:var(--good);background:var(--good-bg)} select.no{border-color:var(--bad);background:var(--bad-bg)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.fb{border-radius:10px;padding:12px 14px;font-weight:500}
+.fb.good{background:var(--good-bg);color:var(--good)} .fb.bad{background:var(--bad-bg);color:var(--bad)}
+.steps{background:var(--chip);border-radius:10px;padding:12px 16px;font-size:14px}
+.steps ol{margin:6px 0 0;padding-left:20px}
+.steps ul{margin:4px 0 8px;padding-left:18px}
+.steps li{margin:2px 0}
+.steps .py{display:inline-block;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-family:var(--f-mono);font-size:13px}
+.steps code{font-family:var(--f-mono);font-size:13px}
+footer{text-align:center;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion: reduce){#plate2.anim{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><small>Ⅶ-1-1 별까지의 거리 · 연습</small>연주 시차 사진 탐정</h1>
+    <div class="tally" aria-live="polite">
+      <span class="chip">문제 <b id="tNo">1</b></span>
+      <span class="chip">완벽 정답 <b id="tOk">0</b></span>
+      <span class="chip">연속 <b id="tStreak">0</b></span>
+    </div>
+  </header>
+
+  <section class="card">
+    <p class="prob" id="probText"></p>
+    <div class="opts">
+      <label><input type="checkbox" id="optScale"> 눈금 1칸의 각도를 문제마다 바꾸기 (0.05″ · 0.1″ · 0.2″, 끄면 항상 0.1″)</label>
+      <label><input type="checkbox" id="optDiag"> 도전: 별이 비스듬히 움직이는 문제 포함</label>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="plate" id="plate1"></div>
+      <div class="plate" id="plate2"><span class="grip">끌어서 겹치기</span></div>
+    </div>
+    <div class="tools">
+      <button id="btnOverlay" type="button">② 사진을 ①에 겹치기</button>
+      <button id="btnReset" type="button">제자리로</button>
+      <button id="btnBlink" type="button" aria-pressed="false">깜빡이 비교</button>
+      <label class="range" for="opacity">겹쳤을 때 사진 ② 진하기 <input type="range" id="opacity" min="20" max="100" value="55"></label>
+    </div>
+    <p class="hint">사진 ②를 끌어 사진 ① 위에 놓으면 딱 맞게 붙습니다. 사진 ②가 사진 ①을 덮을수록 점점 투명해져서 아래 사진이 비쳐 보입니다. 다 겹치면 움직이지 않은 흰 별들은 하나로 겹치고, 별 가·나만 두 군데에 보입니다.</p>
+  </section>
+
+  <section class="card">
+    <p class="prob">① <span id="q1Text"></span></p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>별</th><th>별이 움직인 칸 수<span class="unit">칸</span></th><th>시차<span class="unit">″</span></th><th>연주 시차<span class="unit">″</span></th><th>거리<span class="unit">pc</span></th></tr></thead>
+        <tbody>
+          <tr><td class="star ga">가</td><td><input id="a_n" inputmode="decimal" autocomplete="off"></td><td><input id="a_par" inputmode="decimal" autocomplete="off"></td><td><input id="a_p" inputmode="decimal" autocomplete="off"></td><td><input id="a_d" inputmode="decimal" autocomplete="off"></td></tr>
+          <tr><td class="star na">나</td><td><input id="b_n" inputmode="decimal" autocomplete="off"></td><td><input id="b_par" inputmode="decimal" autocomplete="off"></td><td><input id="b_p" inputmode="decimal" autocomplete="off"></td><td><input id="b_d" inputmode="decimal" autocomplete="off"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prob">② 별 가와 나 중 더 멀리 있는 별은? 연주 시차를 비교하여 서술하시오.</p>
+    <div class="q2">별 <select id="q2star"><option value="">선택</option><option value="가">가</option><option value="나">나</option></select>
+      의 연주 시차가 더 <select id="q2cmp"><option value="">선택</option><option value="작기">작기</option><option value="크기">크기</option></select>
+      때문에, 더 멀리 있는 별이다.</div>
+    <div class="actions">
+      <button class="primary" id="btnCheck" type="button">채점하기</button>
+      <button id="btnHint" type="button">풀이 순서 보기</button>
+      <button id="btnAnswer" type="button">정답 보기</button>
+      <button id="btnNew" type="button">새 문제</button>
+    </div>
+    <div id="feedback" class="fb" hidden></div>
+    <div id="steps" class="steps" hidden></div>
+  </section>
+
+  <footer>제작: 과학교사 구인회 · 시차 = 6개월 간격 사진에서 별이 움직인 각도 · 연주 시차 = 시차의 ½ · 거리(pc) = 1 ÷ 연주 시차(″)</footer>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const CELL=30, GW=14, GH=10, ML=24, MT=30, MR=10, MB=22;
+const VW=ML+GW*CELL+MR, VH=MT+GH*CELL+MB;
+const DATES=[["1월 1일","7월 1일"],["3월 21일","9월 21일"],["4월 15일","10월 15일"],["6월 1일","12월 1일"],["2월 10일","8월 10일"]];
+let P=null, stats={no:1,ok:0,streak:0}, revealed=false;
+
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const ri=(a,b)=>Math.floor(rnd(a,b+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const fmt=x=>{const r=Math.round(x*1000)/1000;return String(r)};
+const dec=x=>{const s=String(Math.round(x*100000)/100000);return s.includes('.')?s.split('.')[1].length:0};
+
+function genProblem(){
+  const randScale=$('optScale').checked, diag=$('optDiag').checked;
+  const prev=P?P.s:null;
+  const s=randScale?pick([0.05,0.1,0.2].filter(v=>v!==prev)):0.1;
+  const dir=Math.random()<.5?1:-1;
+  // candidate moves: [dx,dy,lengthInCells]
+  let moves=[1,2,4,5,8,10].map(n=>[n,0,n]);
+  if(diag) moves=moves.concat([[3,4,5],[4,3,5],[8,6,10]]);
+  moves=moves.filter(m=>{const p=m[2]*s/2, d=1/p; return dec(p)<=3 && dec(d)<=2 && d<=50});
+  let a,b,tries=0;
+  do{a=pick(moves);b=pick(moves);tries++}while((a[2]===b[2])&&tries<50);
+  const vsign=Math.random()<.5?1:-1;
+  function place(m,avoid){
+    for(let t=0;t<300;t++){
+      const dx=m[0]*dir, dy=m[1]*vsign;
+      const x1=ri(1,GW-1), y1=ri(1,GH-1), x2=x1+dx, y2=y1+dy;
+      if(x2<1||x2>GW-1||y2<1||y2>GH-1) continue;
+      if(avoid.some(q=>Math.hypot(q.x1-x1,q.y1-y1)<2.2||Math.hypot(q.x2-x2,q.y2-y2)<2.2||Math.hypot(q.x1-x2,q.y1-y2)<1.5||Math.hypot(q.x2-x1,q.y2-y1)<1.5)) continue;
+      return {x1,y1,x2,y2,n:m[2],diag:m[1]!==0,dx:m[0],dy:m[1]};
+    }
+    return null;
+  }
+  let A,B;
+  for(let k=0;k<50;k++){A=place(a,[]);B=A&&place(b,[A]);if(A&&B)break;}
+  if(!A||!B) return genProblem();
+  const bg=[];
+  for(let t=0;bg.length<9&&t<500;t++){
+    const x=Math.round(rnd(.6,GW-.6)*2)/2, y=Math.round(rnd(.6,GH-.6)*2)/2;
+    const pts=[[A.x1,A.y1],[A.x2,A.y2],[B.x1,B.y1],[B.x2,B.y2],...bg.map(q=>[q.x,q.y])];
+    if(pts.some(p=>Math.hypot(p[0]-x,p[1]-y)<1.6)) continue;
+    bg.push({x,y,r:rnd(.75,1.15)});
+  }
+  const mk=S=>{const par=S.n*s, p=par/2, d=1/p; return {n:S.n,par,p,d}};
+  return {s,A,B,bg,ans:{a:mk(A),b:mk(B)},dates:pick(DATES)};
+}
+
+function starPath(cx,cy,r){
+  let d='';for(let i=0;i<10;i++){const ang=-Math.PI/2+i*Math.PI/5, rr=i%2?r*.45:r;d+=(i?'L':'M')+(cx+rr*Math.cos(ang)).toFixed(2)+' '+(cy+rr*Math.sin(ang)).toFixed(2)}
+  return d+'Z';
+}
+const X=x=>ML+x*CELL, Y=y=>MT+(GH-y)*CELL;
+function plateSVG(which){
+  const t=which===1?`사진 ① ${P.dates[0]} 촬영`:`사진 ② ${P.dates[1]} 촬영`;
+  let g=`<svg viewBox="0 0 ${VW} ${VH}" role="img" aria-label="${t}">`;
+  g+=`<g class="frame"><rect x="0" y="0" width="${VW}" height="${VH}" fill="var(--surface)"/>`;
+  g+=`<text x="${ML+GW*CELL/2}" y="19" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)" font-family="Noto Sans KR, sans-serif">${t}</text>`;
+  g+=`<text x="${ML}" y="19" text-anchor="start" font-size="11" font-weight="700" fill="var(--accent-ink)" font-family="JetBrains Mono, Noto Sans KR, monospace">1칸 = ${fmt(P.s)}″</text>`;
+  for(let i=0;i<=GW;i++) g+=`<text x="${X(i)}" y="${VH-6}" text-anchor="middle" font-size="9" fill="var(--muted)" font-family="JetBrains Mono, monospace">${i}</text>`;
+  for(let j=0;j<=GH;j++) g+=`<text x="${ML-5}" y="${Y(j)+3}" text-anchor="end" font-size="9" fill="var(--muted)" font-family="JetBrains Mono, monospace">${j}</text>`;
+  g+=`</g><rect class="bgrect" x="${ML}" y="${MT}" width="${GW*CELL}" height="${GH*CELL}" fill="var(--plate)" fill-opacity="1"/>`;
+  for(let i=0;i<=GW;i++) g+=`<line x1="${X(i)}" y1="${MT}" x2="${X(i)}" y2="${MT+GH*CELL}" stroke="var(--plate-grid)" stroke-width=".8" stroke-opacity=".7"/>`;
+  for(let j=0;j<=GH;j++) g+=`<line x1="${ML}" y1="${Y(j)}" x2="${ML+GW*CELL}" y2="${Y(j)}" stroke="var(--plate-grid)" stroke-width=".8" stroke-opacity=".7"/>`;
+  P.bg.forEach(b=>{g+=`<path d="${starPath(X(b.x),Y(b.y),6*b.r)}" fill="#ffffff"/>`});
+  const A=P.A,B=P.B;
+  const ax=which===1?A.x1:A.x2, ay=which===1?A.y1:A.y2, bx=which===1?B.x1:B.x2, by=which===1?B.y1:B.y2;
+  g+=`<path d="${starPath(X(ax),Y(ay),11)}" fill="#ffc94a" stroke="#ff8f00" stroke-width="1.5"/>`;
+  g+=`<text x="${X(ax)+9}" y="${Y(ay)-9}" font-size="15" font-weight="700" fill="#ffc94a" font-family="Noto Sans KR, sans-serif">가</text>`;
+  g+=`<path d="${starPath(X(bx),Y(by),9)}" fill="#7fe3f0" stroke="#11899b" stroke-width="1.5"/>`;
+  g+=`<text x="${X(bx)+8}" y="${Y(by)-8}" font-size="15" font-weight="700" fill="#7fe3f0" font-family="Noto Sans KR, sans-serif">나</text>`;
+  return g+'</svg>';
+}
+
+/* ---------- drag & overlay ---------- */
+function overlapRatio(){
+  const a=p1.getBoundingClientRect(), b=p2.getBoundingClientRect();
+  const w=Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left)), h=Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
+  return a.width*a.height?(w*h)/(a.width*a.height):0;
+}
+function fade(){
+  const svg=p2.querySelector('svg'); if(!svg) return;
+  const f=overlapRatio(), minA=$('opacity').value/100;
+  // the more the top photo covers the bottom one, the more see-through it gets
+  svg.style.opacity=(1-(1-minA)*f).toFixed(3);
+  const bg=svg.querySelector('.bgrect'); if(bg) bg.setAttribute('fill-opacity',(1-0.9*f).toFixed(3));
+  const fr=svg.querySelector('.frame'); if(fr) fr.style.opacity=(1-f).toFixed(3);
+}
+let fadeRAF=null;
+function fadeFor(ms){const end=performance.now()+ms;cancelAnimationFrame(fadeRAF);const tick=()=>{fade();if(performance.now()<end)fadeRAF=requestAnimationFrame(tick)};tick();}
+const p1=$('plate1'), p2=$('plate2');
+let off={x:0,y:0}, drag=null, blinkTimer=null;
+function setOff(x,y,anim){
+  const t=target();
+  p2.classList.toggle('anim',!!anim);
+  off={x,y}; p2.style.transform=`translate(${x}px,${y}px)`;
+  const over=Math.hypot(x-t.x,y-t.y)<2;
+  p2.classList.toggle('over',over);
+  if(!over) stopBlink();
+  anim?fadeFor(520):fade();
+}
+function target(){
+  const r1=p1.getBoundingClientRect(), r2=p2.getBoundingClientRect();
+  const m=new DOMMatrixReadOnly(getComputedStyle(p2).transform==='none'?undefined:getComputedStyle(p2).transform);
+  return {x:r1.left-(r2.left-m.e), y:r1.top-(r2.top-m.f)};
+}
+p2.addEventListener('pointerdown',e=>{
+  drag={sx:e.clientX,sy:e.clientY,ox:off.x,oy:off.y}; p2.setPointerCapture(e.pointerId); p2.classList.add('dragging'); p2.classList.remove('anim');
+});
+p2.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  let x=drag.ox+e.clientX-drag.sx, y=drag.oy+e.clientY-drag.sy;
+  const t=target(); if(Math.hypot(x-t.x,y-t.y)<22){x=t.x;y=t.y}
+  setOff(x,y,false);
+});
+const endDrag=()=>{drag=null;p2.classList.remove('dragging')};
+p2.addEventListener('pointerup',endDrag); p2.addEventListener('pointercancel',endDrag);
+$('btnOverlay').onclick=()=>{const t=target();setOff(t.x,t.y,true)};
+$('btnReset').onclick=()=>setOff(0,0,true);
+window.addEventListener('resize',()=>{const wasOver=p2.classList.contains('over');setOff(0,0,false);if(wasOver){const t=target();setOff(t.x,t.y,false)}});
+function stopBlink(){clearInterval(blinkTimer);blinkTimer=null;p2.classList.remove('blinkoff');$('btnBlink').classList.remove('on');$('btnBlink').setAttribute('aria-pressed','false')}
+$('btnBlink').onclick=()=>{
+  if(blinkTimer){stopBlink();return}
+  if(!p2.classList.contains('over')){const t=target();setOff(t.x,t.y,true)}
+  $('btnBlink').classList.add('on');$('btnBlink').setAttribute('aria-pressed','true');
+  blinkTimer=setInterval(()=>p2.classList.toggle('blinkoff'),650);
+};
+$('opacity').oninput=fade;
+
+/* ---------- answer annotation ---------- */
+function annotate(){
+  const svg=p1.querySelector('svg'); if(!svg) return;
+  const old=svg.querySelector('.ann'); if(old) old.remove();
+  let g='<g class="ann" font-family="Noto Sans KR, sans-serif" font-weight="700" font-size="12" paint-order="stroke" stroke-linejoin="round">';
+  g+='<defs><marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ffc94a"/></marker><marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7fe3f0"/></marker></defs>';
+  const lab=(x,y,t,c,anchor='middle')=>`<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${c}" stroke="#0b1a3a" stroke-width="3.5">${t}</text>`;
+  [[P.A,'#ffc94a','arrA'],[P.B,'#7fe3f0','arrB']].forEach(([S,c,m])=>{
+    const x1=X(S.x1),y1=Y(S.y1),x2=X(S.x2),y2=Y(S.y2);
+    if(S.diag){
+      g+=`<path d="M${x1} ${y1}H${x2}V${y2}" fill="none" stroke="${c}" stroke-width="1.6" stroke-dasharray="5 4"/>`;
+      const sx=x2>x1?-8:8, sy=y2>y1?8:-8;
+      g+=`<path d="M${x2+sx} ${y1}V${y1+sy}H${x2}" fill="none" stroke="${c}" stroke-width="1.2"/>`;
+      g+=lab((x1+x2)/2,y1+(y2>y1?-7:16),`가로 ${S.dx}칸`,c);
+      let right=x2>x1; if(right&&x2>X(GW-2.5)) right=false; if(!right&&x2<X(2.5)) right=true;
+      g+=lab(x2+(right?9:-9),(y1+y2)/2+4,`세로 ${S.dy}칸`,c,right?'start':'end');
+    }
+    g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="2.4" marker-end="url(#${m})"/>`;
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    if(S.diag){const nx=-(y2-y1), ny=(x2-x1), L=Math.hypot(nx,ny)||1, side=(y2>y1)===(x2>x1)?1:-1;
+      g+=lab(mx+side*nx/L*16,my+side*ny/L*16+4,`${S.n}칸`,c);}
+    else g+=lab(mx,my-9,`${S.n}칸`,c);
+  });
+  svg.insertAdjacentHTML('beforeend',g+'</g>');
+}
+
+/* ---------- problem render ---------- */
+const IDS=['a_n','a_par','a_p','a_d','b_n','b_par','b_p','b_d'];
+function render(){
+  P=genProblem(); revealed=false;
+  $('probText').innerHTML=`<span class="tag">문제 ${stats.no}</span>다음은 천문대에서 같은 하늘을 6개월 간격으로 찍은 사진이다. 가와 나를 제외한 흰 별들은 매우 멀리 있어서 거의 움직이지 않는다.`;
+  $('q1Text').innerHTML=`사진의 눈금 1칸은 각도 <b class="scale">${fmt(P.s)}″</b>를 나타내고, 두 사진 사이에서 별이 움직인 각도는 시차 전체이다. 표를 채우시오.`+(P.A.diag||P.B.diag?' (비스듬히 움직인 별은 움직인 직선 거리를 칸 수로 셉니다.)':'');
+  p1.innerHTML=plateSVG(1);
+  p2.innerHTML='<span class="grip">끌어서 겹치기</span>'+plateSVG(2);
+  $('opacity').value=55;
+  stopBlink(); setOff(0,0,false);
+  IDS.forEach(id=>{const el=$(id);el.value='';el.className=''});
+  ['q2star','q2cmp'].forEach(id=>{$(id).value='';$(id).className=''});
+  $('feedback').hidden=true; $('steps').hidden=true;
+  $('tNo').textContent=stats.no;
+}
+function num(v){v=String(v).replace(/[″"'\s]|pc|칸/gi,'').replace(',','.');if(v===''||v==='.')return NaN;return Number(v)}
+function expected(){
+  const A=P.ans.a,B=P.ans.b;
+  return {a_n:A.n,a_par:A.par,a_p:A.p,a_d:A.d,b_n:B.n,b_par:B.par,b_p:B.p,b_d:B.d};
+}
+function farther(){return P.ans.a.d>P.ans.b.d?'가':'나'}
+$('btnCheck').onclick=()=>{
+  const E=expected(); let right=0, total=IDS.length+2;
+  IDS.forEach(id=>{
+    const el=$(id), v=num(el.value), ok=!isNaN(v)&&Math.abs(v-E[id])<(id.endsWith('_d')?0.011:0.0006);
+    el.className=ok?'ok':'no'; if(ok) right++;
+  });
+  const s1=$('q2star').value===farther(), s2=$('q2cmp').value==='작기';
+  $('q2star').className=s1?'ok':'no'; $('q2cmp').className=s2?'ok':'no';
+  right+=(s1?1:0)+(s2?1:0);
+  const fb=$('feedback'); fb.hidden=false;
+  if(right===total){
+    fb.className='fb good';
+    if(!revealed){stats.ok++;stats.streak++;}
+    fb.textContent=revealed?'모두 맞았습니다. 정답을 본 뒤라 기록에는 넣지 않았어요. 새 문제로 다시 도전해 보세요.':`완벽합니다! ${right}/${total} 모두 정답. 새 문제에 도전해 보세요.`;
+  }else{
+    stats.streak=0;
+    fb.className='fb bad';
+    const tips=[];
+    const bad=IDS.filter(id=>$(id).className==='no');
+    if(bad.some(i=>i.endsWith('_n'))) tips.push((P.A.diag||P.B.diag)?'비스듬히 움직인 별은 가로·세로 칸 수를 세어 피타고라스 정리 √(가로² + 세로²)로 직선 거리를 구해 보세요.':'사진 ②를 ①에 겹쳐서 별이 몇 칸 움직였는지 다시 세어 보세요.');
+    if(bad.some(i=>i.endsWith('_par'))) tips.push(`시차 = 움직인 칸 수 × ${fmt(P.s)}″`);
+    if(bad.some(i=>i.endsWith('_p'))) tips.push('연주 시차는 시차의 절반이에요.');
+    if(bad.some(i=>i.endsWith('_d'))) tips.push('거리(pc) = 1 ÷ 연주 시차(″)');
+    if(!s1||!s2) tips.push('연주 시차가 작을수록 별은 멀리 있어요.');
+    fb.textContent=`${right}/${total} 정답. `+tips.join(' ');
+  }
+  $('tOk').textContent=stats.ok; $('tStreak').textContent=stats.streak;
+};
+$('btnHint').onclick=()=>{
+  const st=$('steps');
+  if(!st.hidden&&st.dataset.mode==='hint'){st.hidden=true;return}
+  st.dataset.mode='hint'; st.hidden=false;
+  st.innerHTML=`<b>풀이 순서</b><ol>
+  <li>사진 ②를 ①에 겹친다 → 흰 별은 그대로, 가·나만 두 곳에 보인다.</li>
+  <li>두 위치 사이의 칸 수를 센다.${(P.A.diag||P.B.diag)?' 비스듬히 움직였다면 가로 칸 수와 세로 칸 수를 따로 센 뒤, 피타고라스 정리로 직선 거리를 구한다: <span class="py">움직인 칸 수 = √(가로² + 세로²)</span>':''}</li>
+  <li>시차 = 칸 수 × <code>${fmt(P.s)}″</code></li>
+  <li>연주 시차 = 시차 ÷ 2</li>
+  <li>거리(pc) = 1 ÷ 연주 시차(″)</li>
+  <li>연주 시차가 작은 별이 더 멀리 있다.</li></ol>`;
+};
+$('btnAnswer').onclick=()=>{
+  const E=expected(); revealed=true;
+  IDS.forEach(id=>{$(id).value=fmt(E[id]);$(id).className='ok'});
+  $('q2star').value=farther();$('q2cmp').value='작기';$('q2star').className=$('q2cmp').className='ok';
+  const A=P.ans.a,B=P.ans.b, st=$('steps'); st.dataset.mode='ans'; st.hidden=false;
+  const block=(nm,S,o)=>{
+    const move=S.diag
+      ? `가로 <b>${S.dx}칸</b>, 세로 <b>${S.dy}칸</b> 비스듬히 움직였다. 직각삼각형의 빗변 길이를 피타고라스 정리로 구한다.<br><span class="py">√(${S.dx}² + ${S.dy}²) = √(${S.dx*S.dx} + ${S.dy*S.dy}) = √${S.dx*S.dx+S.dy*S.dy} = ${S.n}칸</span>`
+      : `가로로 <b>${S.n}칸</b> 움직였다.`;
+    return `<li><b>별 ${nm}</b><ul>
+      <li>움직인 칸 수: ${move}</li>
+      <li>시차 = ${S.n}칸 × ${fmt(P.s)}″ = <code>${fmt(o.par)}″</code></li>
+      <li>연주 시차 = ${fmt(o.par)}″ ÷ 2 = <code>${fmt(o.p)}″</code></li>
+      <li>거리 = 1 ÷ ${fmt(o.p)} = <code>${fmt(o.d)} pc</code></li></ul></li>`;
+  };
+  const far=farther(), near=far==='가'?'나':'가', F=far==='가'?A:B, N=far==='가'?B:A;
+  st.innerHTML=`<b>정답 풀이</b><ol>${block('가',P.A,A)}${block('나',P.B,B)}
+    <li><b>비교</b>: 연주 시차 ${far} ${fmt(F.p)}″ &lt; ${near} ${fmt(N.p)}″ → 별 ${far}의 연주 시차가 더 작기 때문에 더 멀리 있다. (${far} ${fmt(F.d)} pc, ${near} ${fmt(N.d)} pc)</li></ol>
+    <p style="margin:6px 0 0;font-size:13px">사진 ①에 별의 이동을 화살표로 표시했어요.${(P.A.diag||P.B.diag)?' 비스듬한 이동은 가로·세로 점선이 직각삼각형을 이룹니다.':''}</p>`;
+  annotate();
+  const t=target(); setOff(t.x,t.y,true);
+};
+$('btnNew').onclick=()=>{stats.no++;render()};
+['optScale','optDiag'].forEach(id=>$(id).onchange=()=>{stats.no++;render()});
+render();
+})();
+</script>
+
+</body></html>

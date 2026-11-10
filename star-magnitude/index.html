@@ -1,0 +1,686 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>별 등급 트레이닝</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one problem card (table + three questions) with a fold-out hint lab: textbook figure + draggable star on a distance line. */
+:root{
+  --bg:#eef2f7; --surface:#ffffff; --ink:#18233a; --muted:#5d6b82; --line:#d5dde9; --chip:#e6ecf5;
+  --accent:#d98a1c; --accent-ink:#8a5208; --cyan:#1d9bb0;
+  --good:#1f8a4c; --good-bg:#e3f4ea; --bad:#c43c2f; --bad-bg:#fbe7e4;
+  --sky:#0b1a3a;
+  --f-display:"Do Hyeon","Noto Sans KR",system-ui,sans-serif;
+  --f-body:"Noto Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1424; --surface:#161f34; --ink:#e6ecf7; --muted:#9aa8c2; --line:#2a3754; --chip:#22304d;
+  --accent:#f0a83a; --accent-ink:#f6c46f; --cyan:#5fd0e2;
+  --good:#5cc98a; --good-bg:#16352a; --bad:#ff8a7a; --bad-bg:#3d1d1d; --sky:#071230; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1424; --surface:#161f34; --ink:#e6ecf7; --muted:#9aa8c2; --line:#2a3754; --chip:#22304d;
+  --accent:#f0a83a; --accent-ink:#f6c46f; --cyan:#5fd0e2;
+  --good:#5cc98a; --good-bg:#16352a; --bad:#ff8a7a; --bad-bg:#3d1d1d; --sky:#071230; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
+.wrap{max-width:880px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 20px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,5vw,40px);line-height:1.1;margin:0;text-wrap:balance}
+h1 small{display:block;font-family:var(--f-body);font-size:13px;color:var(--muted);letter-spacing:.08em;margin-bottom:6px}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--chip);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--muted)}
+.chip b{color:var(--ink);font-family:var(--f-mono)}
+.score{background:var(--accent);color:#fff;border-radius:999px;padding:5px 15px;font-size:16px;font-weight:700;white-space:nowrap;transition:.2s;font-family:var(--f-mono);align-self:center}
+.score.up{background:var(--good);transform:scale(1.15)}
+.score.down{background:var(--bad);transform:scale(1.15)}
+.pt{font-weight:700;margin-left:4px}.pt.p{color:var(--good)}.pt.m{color:var(--bad)}
+.q h3 .qt{flex:1 1 180px;min-width:0;word-break:keep-all}
+.q h3 .qt .sb{width:26px;height:26px;font-size:14px;vertical-align:middle;margin:0 2px}
+.qpts{font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
+.combo{display:inline-block;background:var(--accent);color:#1a1205;border-radius:6px;padding:0 8px;font-weight:700;margin-left:4px}
+td.clr{font-family:var(--f-body);font-weight:700;font-size:14px;white-space:nowrap}
+td.clr i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:4px;vertical-align:-1px;border:1px solid rgba(0,0,0,.25)}
+.scoreguide{font-size:12.5px;color:var(--muted);margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px clamp(14px,3vw,26px);display:grid;gap:16px;min-width:0}
+.qno{font-family:var(--f-display);font-size:22px;color:var(--accent-ink);margin:0}
+.stem{margin:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+th{background:var(--chip);font-size:14px}
+td{font-family:var(--f-mono);font-weight:500;font-size:16px}
+.q{display:grid;gap:10px;padding-top:4px;border-top:1px dashed var(--line)}
+.q h3{margin:0;font-size:17px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.q h3 .n{font-family:var(--f-display);font-weight:400;color:var(--accent-ink);font-size:20px}
+.q h3 em{font-style:normal;color:var(--accent-ink);background:var(--chip);border-radius:6px;padding:0 6px}
+.mark{font-size:14px;font-weight:700;margin-left:auto}
+.mark.ok{color:var(--good)} .mark.no{color:var(--bad)}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{font:inherit;font-weight:700;font-size:16px;min-width:56px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:8px 14px;cursor:pointer}
+.opt:hover{border-color:var(--accent)}
+.opt.sel{border-color:var(--accent);background:var(--accent);color:#1a1205}
+.opt.ok{border-color:var(--good);background:var(--good-bg);color:var(--good)}
+.opt.no{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.hintrow{display:flex}
+.sb{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.28);box-sizing:border-box;font-weight:700;font-size:15px;font-family:var(--f-body);box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
+th .sb{width:28px;height:28px}
+.opt .sb{width:26px;height:26px;font-size:14px}
+.opt.sel .sb{box-shadow:0 0 0 2px var(--surface)}
+.tok{position:relative}
+.tok.ok::after,.tok.no::after{position:absolute;right:-6px;top:-6px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;color:#fff}
+.tok.ok::after{content:"✓";background:var(--good)} .tok.no::after{content:"✗";background:var(--bad)}
+.pool{display:flex;flex-wrap:wrap;gap:10px;align-items:center;min-height:62px;padding:10px 12px;border:1.5px dashed var(--line);border-radius:12px;background:var(--bg)}
+.pool .lbl{font-size:13px;color:var(--muted);margin-right:4px}
+.zones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.qno .stage{font-family:var(--f-body);font-size:13px;font-weight:700;color:var(--muted);background:var(--chip);border-radius:999px;padding:2px 10px;vertical-align:middle;margin-left:6px}
+
+.zone{border:2px dashed var(--line);border-radius:12px;padding:10px;min-height:120px;display:grid;grid-template-rows:auto 1fr;gap:8px;background:var(--bg);cursor:pointer;transition:border-color .15s,background .15s}
+.zone h4{margin:0;font-size:15px;text-align:center}
+.zone .sub{display:block;font-size:12px;font-weight:500;color:var(--muted);font-family:var(--f-mono)}
+.zone[data-zone="near"] h4{color:var(--cyan)} .zone[data-zone="far"] h4{color:var(--accent-ink)}
+.zone .slot{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;justify-content:center;min-height:52px}
+.zone.over{border-color:var(--accent);background:var(--chip)}
+.tok{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:18px;background:var(--tc);color:var(--tt);border:2px solid rgba(0,0,0,.18);background-image:radial-gradient(circle at 35% 30%,rgba(255,255,255,.55),transparent 55%);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.tok.pick{outline:3px solid var(--accent);outline-offset:3px}
+.tok.drag{position:fixed;z-index:50;pointer-events:none;cursor:grabbing;box-shadow:0 10px 24px rgba(0,0,0,.35);transform:scale(1.08)}
+.tok.ok{box-shadow:0 0 0 3px var(--good)}
+.tok.no{box-shadow:0 0 0 3px var(--bad)}
+.tok:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.ph{width:48px;height:48px;border-radius:50%;border:2px dashed var(--line)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button.btn{font:inherit;font-weight:700;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:9px 16px;cursor:pointer}
+button.btn:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1a1205}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.fb{border-radius:12px;padding:12px 16px;font-weight:500}
+.fb.good{background:var(--good-bg);color:var(--good)} .fb.bad{background:var(--bad-bg);color:var(--bad)}
+.fb ul{margin:6px 0 0;padding-left:20px;font-weight:400}
+/* hint lab */
+.hint{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:14px;display:grid;gap:12px}
+.lab{background:var(--sky);border-radius:12px;padding:8px}
+.lab svg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.labbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.starchip{font:inherit;font-weight:700;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:4px 14px;cursor:pointer}
+.starchip{padding:3px}.starchip.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+.readout{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:15px}
+.readout .v{font-family:var(--f-mono);font-weight:700}
+.readout .cmp{font-family:var(--f-mono);font-weight:700;font-size:20px;color:var(--accent-ink);background:var(--chip);border-radius:8px;padding:0 10px}
+.readout .verdict{font-weight:700}
+.tip{font-size:13px;color:var(--muted);margin:0}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--chip);padding:6px;border-radius:16px}
+.tab{font:inherit;display:flex;align-items:center;gap:12px;text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:12px 16px;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}
+.tab .ic{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:var(--chip);color:var(--accent-ink)}
+.tab b{display:block;font-family:var(--f-display);font-weight:400;font-size:clamp(20px,3.6vw,26px);line-height:1.15;color:inherit}
+.tab small{display:block;font-size:13px;line-height:1.35}
+.tab:hover{border-color:var(--accent)}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#1a1205;box-shadow:0 4px 14px rgba(217,138,28,.35)}
+.tab[aria-selected="true"] .ic{background:#1a1205;color:var(--accent)}
+@media (max-width:480px){.tab{padding:10px}.tab .ic{display:none}}
+.sky{background:#071230;border-radius:12px;overflow:hidden}
+.sky svg{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.sky .st{cursor:grab}
+.extbl{overflow-x:auto}
+.extbl table{min-width:620px}
+.extbl td.nm{font-family:var(--f-body);font-weight:700;text-align:left}
+.extbl .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.extbl td.sg{font-size:20px;color:var(--accent-ink)}
+.extbl td.vd{font-family:var(--f-body);font-weight:700;font-size:14px}
+.vd.near{color:var(--cyan)} .vd.far{color:var(--accent-ink)}
+footer{text-align:center;color:var(--muted);font-size:13px}
+.tempbox{display:grid;gap:12px;border-top:1px dashed var(--line);padding-top:16px;margin-top:4px}
+.tlab{display:flex;align-items:center;gap:18px;background:#071230;border-radius:12px;padding:12px 18px}
+.tlab svg{width:120px;height:120px;flex:none}
+.tread{color:#e6ecf7;display:grid;gap:2px}
+.tread .tt{font-family:var(--f-mono);font-size:26px;font-weight:700}
+.tread .tn{font-family:var(--f-display);font-size:28px}
+.tread .te{font-size:14px;color:#b9c3d6}
+#tSlider{width:100%;height:28px;margin:0;-webkit-appearance:none;appearance:none;border-radius:999px;background:linear-gradient(90deg,#3f6fe8,#a9cbff,#ffffff,#fff1b8,#ffd23f,#ff9433,#e5483a);border:1px solid var(--line);cursor:pointer}
+#tSlider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--surface);border:3px solid var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.3)}
+#tSlider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--surface);border:3px solid var(--ink)}
+.tscale{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:-6px}
+.tsegs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.tseg{font:inherit;font-weight:700;font-size:13px;border:2px solid var(--line);border-radius:10px;padding:8px 2px;cursor:pointer;color:#1a1205;word-break:keep-all}
+.tseg.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+.ttbl{min-width:0!important}
+.ttbl td{font-family:var(--f-body);font-size:14px}
+.ttbl td.nm{font-weight:700;text-align:left;white-space:nowrap}
+@media (max-width:560px){.tlab svg{width:90px;height:90px}.tread .tt{font-size:21px}.tread .tn{font-size:23px}.tseg{font-size:11px;padding:6px 0}.ttbl td{font-size:12.5px}}
+@media (max-width:560px){
+  .zones{gap:6px}
+  .zone{padding:6px 4px;min-height:96px;gap:4px}
+  .zone h4{font-size:12.5px;line-height:1.3}
+  .zone .slot{gap:4px;min-height:44px}
+  .tok,.ph{width:40px;height:40px;font-size:16px}
+  .pool{min-height:56px;padding:8px;gap:8px}
+  th,td{padding:6px 4px}
+  th{font-size:12.5px;white-space:nowrap}
+  td{font-size:15px}
+  td.clr{font-size:12.5px}
+  td.clr i{display:block;margin:0 auto 2px}
+  th .sb{width:24px;height:24px;font-size:13px}
+  .zone h4{font-size:12px;word-break:keep-all}
+  .card{gap:12px}
+}</style>
+
+<div class="wrap">
+  <header>
+    <h1><small>Ⅶ-1-2 별의 밝기와 등급 · 반복 연습</small>별 등급 트레이닝</h1>
+    <div class="stats" aria-live="polite">
+      <span class="score" id="score" title="1번 1점 · 2번 1점 · 3번 2점 · 4번 1점 · 5번 4점(힌트 2점) / 한 번에 모두 맞히면 +2점 보너스 / 연속으로 한 번에 모두 맞히면 2배">0점</span>
+      <span class="chip">해결 <b id="sSolved">0</b></span>
+      <span class="chip">한 번에 맞힘 <b id="sFirst">0</b></span>
+      <span class="chip">연속 <b id="sStreak">0</b></span>
+    </div>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="활동 고르기"><button class="tab" role="tab" id="tbQuiz" aria-selected="true" type="button"><span class="ic" aria-hidden="true">✎</span><span><b>문제 풀기</b><small>1~4번 채점 후 5번 풀기</small></span></button><button class="tab" role="tab" id="tbExplore" aria-selected="false" type="button"><span class="ic" aria-hidden="true">★</span><span><b>자유 탐구</b></span></button></nav>
+
+  <section class="card" id="paneQuiz">
+    <p class="qno" id="qno">문제 1</p>
+    <p class="stem">다음은 별 A~E의 겉보기 등급, 절대 등급, 색깔을 나타낸 것이다.</p>
+    <div class="tbl" id="table"></div>
+
+    <div class="q" id="q1"></div>
+    <div class="q" id="q2"></div>
+    <div class="q" id="qr"></div>
+    <div class="q" id="qc"></div>
+    <div class="fb good" id="stageNote" hidden></div>
+    <div class="q" id="q3"></div>
+    <div class="hintrow" id="hintrow" style="flex-wrap:wrap;gap:6px 12px;align-items:center"><button class="btn" id="btnHint" type="button" aria-expanded="false">힌트 열기 · 별을 끌어 거리 바꿔 보기</button><span class="tip" id="hintNote"></span></div>
+    <div class="hint" id="hint" hidden>
+      <div class="labbar">
+        <span class="tip"><b>예시 별</b>(절대 등급 <b>1등급</b>)을 끌어 보세요:</span>
+        <button class="btn" id="btnNear" type="button">가깝게 (2.5 pc)</button>
+        <button class="btn" id="btn10" type="button">10 pc로</button>
+        <button class="btn" id="btnFar" type="button">멀게 (40 pc)</button>
+      </div>
+      <div class="lab"><svg id="sim" viewBox="0 0 720 272" role="img" aria-label="지구에서 별까지의 거리를 바꿔 보는 그림"></svg></div>
+      <div class="readout" id="readout" aria-live="polite"></div>
+      <p class="tip">지구와 가까워지면 밝아지고 겉보기 등급 값이 <b>작아집니다</b>. 멀어지면 어두워지고 겉보기 등급 값이 <b>커집니다</b>. 절대 등급은 별을 10 pc에 놓았을 때의 밝기라서 끌어도 변하지 않습니다. 예시 별에서 찾은 원리로 표의 별 A~E를 판단해 보세요. (거리 눈금은 1 → 10 → 100 pc가 같은 간격인 로그 눈금)</p>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="btnCheck" type="button">채점하기</button>
+      <button class="btn" id="btnAnswer" type="button">정답 보기</button>
+    </div>
+    <div id="fb" class="fb" hidden></div>
+    <p class="scoreguide">점수: 처음 채점에서 맞힌 문항만 점수를 받아요(1번 <b>1점</b> · 2번 <b>1점</b> · 3번 <b>2점</b> · 4번 <b>1점</b> · 5번 <b>4점</b>, 힌트를 열면 5번 <b>2점</b>). 틀려도 감점은 없지만, 고쳐서 맞힌 문항은 점수가 없어요. 다섯 문항을 <b>한 번에 모두</b> 맞히면 보너스 <b>+2점</b>, 바로 앞 문제에 이어 <b>연속으로</b> 한 번에 모두 맞히면 그 문제 점수 <b>2배</b>! 틀리거나 정답 보기를 누르면 연속 기록이 끊겨요.</p>
+
+  </section>
+
+  <section class="card" id="paneExplore" hidden>
+    <p class="qno" style="margin:0">별을 옮겨 보자</p>
+    <p class="stem">별을 끌어서 지구와 가깝게, 또는 멀게 옮겨 보세요. 별의 밝기와 <b>겉보기 등급</b>이 바뀝니다. 회색 화살표 끝의 별은 그 별을 <b>10 pc</b>에 놓았을 때의 모습(<b>절대 등급</b>)으로, 별을 아무리 옮겨도 변하지 않습니다.</p>
+    <div class="actions">
+      <button class="btn" id="exReset" type="button">처음 위치로</button>
+      <button class="btn primary" id="exAll10" type="button">모든 별을 10 pc로 옮기기</button>
+      <button class="btn" id="exArrows" type="button" aria-pressed="true">절대 등급 화살표 숨기기</button>
+    </div>
+    <div class="sky"><svg id="exSky" viewBox="0 0 1000 480" role="img" aria-label="지구와 10 pc 거리 선, 태양·시리우스·베텔게우스·데네브·북극성의 겉보기 등급과 절대 등급을 나타낸 그림"></svg></div>
+    <div class="extbl"><table><thead><tr><th>별</th><th>색깔</th><th>지구로부터의 거리</th><th>겉보기 등급</th><th></th><th>절대 등급</th><th>10 pc와 비교</th></tr></thead><tbody id="exBody"></tbody></table></div>
+    <p class="tip" id="exTip">그림 속 거리는 실제 비율이 아닙니다. 가까운 태양부터 아주 먼 데네브까지 한 화면에 담으려고 거리를 줄여서(로그 눈금) 그렸어요. 별 위치는 교과서 그림을 따랐고 등급 값은 교과서 253쪽 자료입니다.</p>
+    <div class="tempbox">
+      <p class="qno" style="margin:0">별의 색깔과 표면 온도</p>
+      <p class="stem">별의 색깔은 <b>표면 온도</b>에 따라 달라요. 표면 온도가 <b>높을수록 파란색</b>, <b>낮을수록 붉은색</b>을 띱니다. 막대를 끌거나 색깔을 눌러 표면 온도를 바꿔 보세요.</p>
+      <div class="tlab">
+        <svg id="tStar" viewBox="0 0 160 160" aria-hidden="true"></svg>
+        <div class="tread" aria-live="polite"><div class="tt" id="tTemp"></div><div class="tn" id="tName"></div><div class="te" id="tEx"></div></div>
+      </div>
+      <input type="range" id="tSlider" min="0" max="1000" step="1" aria-label="표면 온도 바꾸기">
+      <div class="tscale"><span>◀ 표면 온도 높다</span><span>표면 온도 낮다 ▶</span></div>
+      <div class="tsegs" id="tSegs"></div>
+      <div class="extbl"><table class="ttbl"><thead><tr><th>색깔</th><th>표면 온도 (대략)</th><th>예</th></tr></thead><tbody id="tBody"></tbody></table></div>
+      <p class="tip">K(켈빈)은 온도의 단위로, 0 °C는 약 273 K예요. 표의 온도 범위는 대략적인 값입니다. 위 그림의 별들도 색깔이 다르죠? 태양은 황색, 베텔게우스는 적색, 시리우스와 데네브는 백색, 북극성은 황백색 별이에요.</p>
+    </div>
+  </section>
+
+  <footer>제작: 과학교사 구인회</footer>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const f1=x=>{const v=Math.round(x*10)/10;return (v<0?'−':'')+Math.abs(v).toFixed(1)};
+const NAMES=['A','B','C','D','E'];
+const COL={X:['#f5c542','#2b1a00'],A:['#4b5a78','#fff'],B:['#4b5a78','#fff'],C:['#4b5a78','#fff'],D:['#4b5a78','#fff'],E:['#4b5a78','#fff']};
+const badge=n=>`<span class="sb" style="background:${COL[n][0]};color:${COL[n][1]}">${n}</span>`;
+const CAT=[['near','10 pc보다 가깝다'],['at','10 pc에 있다'],['far','10 pc보다 멀다']];
+const cat=s=>s.m<s.M?'near':s.m>s.M?'far':'at';
+
+let S=null, P=null, ans={q1:null,q2:null,qr:null,qc:null,q3:{}}, tries=0, solved=false, qn=0, timer=null;
+const stat={solved:0,first:0,streak:0};
+let score=0, qs=null;
+const PTS={q1:[1,0],q2:[1,0],qr:[2,0],qc:[1,0],q3:[4,0]}, BONUS=2;
+const QNUM={q1:1,q2:2,qr:3,qc:4,q3:5}, QORD=['q1','q2','qr','qc','q3'];
+const SCOL=[['파란색','#3f6fe8'],['청백색','#a9cbff'],['백색','#ffffff'],['황백색','#fff1b8'],['황색','#ffd23f'],['주황색','#ff9433'],['적색','#e5483a']]; // 표면 온도 높은 순
+const RATIO=['','약 2.5배','약 6.3배','약 16배','약 40배','100배'];
+let RQ=null, hintUsed=false, stage=1, tries1=0, tries2=0, s1pts=0;
+function findRatio(set){
+  const types=shuffle(['m','M']);
+  for(const t of types){
+    const pairs=[];
+    set.forEach(x=>set.forEach(y=>{const d=y[t]-x[t]; if(d>=1&&d<=5&&Math.abs(d-Math.round(d))<1e-9) pairs.push({t,a:x.n,b:y.n,d:Math.round(d)})}));
+    if(pairs.length) return pick(pairs);
+  }
+  return null;
+}
+function resetQs(){qs={q1:{done:false},q2:{done:false},qr:{done:false},qc:{done:false},q3:{done:false}}}
+function updHintNote(){const n=$('hintNote'); if(n) n.textContent=hintUsed?'이 문제는 힌트를 사용해서 5번을 한 번에 맞혀도 +2점이에요.':'힌트를 열면 이 문제의 5번 점수가 +4점 → +2점으로 줄어요.'}
+function updateScore(){$('score').textContent=score+'점'}
+function addScore(n){
+  if(!n) return;
+  score=Math.max(0,score+n); updateScore();
+  const el=$('score'); el.classList.remove('up','down'); void el.offsetWidth; el.classList.add(n<0?'down':'up');
+  setTimeout(()=>el.classList.remove('up','down'),650);
+}
+const ptTag=n=>n>0?`<span class="pt p">+${n}점</span>`:n<0?`<span class="pt m">-${-n}점</span>`:'';
+
+function makeSet(){
+  for(let t=0;t<2000;t++){
+    const diffs=shuffle([0, pick([-4,-3,-2.5,-2,-1.5,-1,-0.5]), pick([0.5,1,1.5,2,3,4,5]), pick([-3,-2,-1.5,-1,-0.5,0.5,1,2,3,4,5,6]), pick([-2,-1,-0.5,0.5,1,2,3,4])]);
+    const s=diffs.map((d,i)=>{const m=ri(-6,14)/2;return {n:NAMES[i],m,M:m-d}});
+    if(s.some(x=>x.M<-8||x.M>8)) continue;
+    const uniq=a=>new Set(a).size===a.length;
+    if(!uniq(s.map(x=>x.m))||!uniq(s.map(x=>x.M))) continue;
+    if(s.filter(x=>x.m===x.M).length!==1) continue;
+    return s;
+  }
+}
+function newProblem(){
+  clearTimeout(timer);
+  do{S=makeSet(); RQ=findRatio(S)}while(!RQ);
+  qn++; tries1=0; tries2=0; s1pts=0; solved=false; resetQs(); hintUsed=false;
+  P={q1:pick(['bright','dim']), q2:pick(['bright','dim']), qc:pick(['hot','cold'])};
+  shuffle([0,1,2,3,4,5,6]).slice(0,5).forEach((c,i)=>{S[i].c=c; COL[S[i].n]=[SCOL[c][1], (c===0||c===6)?'#fff':'#1a1205'];}); // 동그라미 색 = 별의 색깔
+  ans={q1:null,q2:null,qr:null,qc:null,q3:{}};
+    $('table').innerHTML=`<table><thead><tr><th>별</th>${S.map(s=>`<th>${badge(s.n)}</th>`).join('')}</tr></thead><tbody>
+    ${(()=>{const rows=[`<tr><th>겉보기 등급</th>${S.map(s=>`<td>${f1(s.m)}</td>`).join('')}</tr>`,`<tr><th>절대 등급</th>${S.map(s=>`<td>${f1(s.M)}</td>`).join('')}</tr>`];return (Math.random()<.5?rows:rows.reverse()).join('')+`<tr><th>색깔</th>${S.map(s=>`<td class="clr"><i style="background:${SCOL[s.c][1]}"></i>${SCOL[s.c][0]}</td>`).join('')}</tr>`})()}</tbody></table>`;
+  $('q1').innerHTML=`<h3><span class="n">1</span>우리 눈에 가장 <em>${P.q1==='bright'?'밝게':'어둡게'}</em> 보이는 별은?<span class="qpts">(1점)</span><span class="mark" id="m1"></span></h3><div class="opts" data-q="q1">${S.map(s=>`<button class="opt" type="button" data-v="${s.n}" aria-label="별 ${s.n}">${badge(s.n)}</button>`).join('')}</div>`;
+  $('q2').innerHTML=`<h3><span class="n">2</span>실제로 가장 <em>${P.q2==='bright'?'밝은':'어두운'}</em> 별은?<span class="qpts">(1점)</span><span class="mark" id="m2"></span></h3><div class="opts" data-q="q2">${S.map(s=>`<button class="opt" type="button" data-v="${s.n}" aria-label="별 ${s.n}">${badge(s.n)}</button>`).join('')}</div>`;
+  const ra=badge(RQ.a), rb=badge(RQ.b);
+  $('qr').innerHTML=`<h3><span class="n">3</span><span class="qt">${RQ.t==='m'?`별 ${ra}는 별 ${rb}보다 <em>우리 눈에</em> 몇 배 밝게 보일까?`:`별 ${ra}의 <em>실제 밝기</em>는 별 ${rb}의 몇 배인가?`} <span class="qpts">(2점)</span></span><span class="mark" id="mr"></span></h3><div class="opts" data-q="qr">${[1,2,3,4,5].map(d=>`<button class="opt" type="button" data-v="${d}">${RATIO[d]}</button>`).join('')}</div>`;
+  $('qc').innerHTML=`<h3><span class="n">4</span>표면 온도가 가장 <em>${P.qc==='hot'?'높은':'낮은'}</em> 별은?<span class="qpts">(1점)</span><span class="mark" id="mc"></span></h3><div class="opts" data-q="qc">${S.map(s=>`<button class="opt" type="button" data-v="${s.n}" aria-label="별 ${s.n}">${badge(s.n)}</button>`).join('')}</div>`;
+  $('q3').innerHTML=`<h3><span class="n">5</span><span class="qt">별 A~E를 끌어서 알맞은 칸에 넣으시오. <span class="qpts">(4점 · 힌트를 열면 2점)</span></span><span class="mark" id="m3"></span></h3>
+    <div class="pool" data-zone="pool"><span class="lbl">별</span>${S.map(s=>`<div class="tok" tabindex="0" role="button" data-star="${s.n}" aria-label="별 ${s.n}" style="--tc:${COL[s.n][0]};--tt:${COL[s.n][1]}">${s.n}</div>`).join('')}</div>
+    <div class="zones">${CAT.map(c=>`<div class="zone" data-zone="${c[0]}" tabindex="0" role="button" aria-label="${c[1]}"><h4>${c[1]}</h4><div class="slot"></div></div>`).join('')}</div>
+    <p class="tip">별을 끌어다 놓거나, 별을 누른 뒤 칸을 눌러도 됩니다. 칸에 넣은 별을 다시 끌어 옮길 수 있어요.</p>`;
+  bindTokens();
+  document.querySelectorAll('.opts').forEach(g=>g.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    if(solved) return;
+    const q=g.dataset.q, v=b.dataset.v;
+    ans[q]=v;
+    g.querySelectorAll('.opt').forEach(x=>{x.classList.toggle('sel',x===b);x.classList.remove('ok','no')});
+    ['m1','m2','mr','mc','m3'].forEach(id=>{$(id).textContent='';$(id).className='mark'});
+  }));
+  $('fb').hidden=true; $('stageNote').hidden=true;
+  setStage(1); updHintNote();
+}
+let picked=null;
+function clearMarks(){['m1','m2','mr','mc','m3'].forEach(id=>{$(id).textContent='';$(id).className='mark'});document.querySelectorAll('.tok').forEach(t=>t.classList.remove('ok','no'))}
+function placeTok(tok,zone){
+  const target=zone==='pool'?document.querySelector('.pool'):document.querySelector(`.zone[data-zone="${zone}"] .slot`);
+  target.appendChild(tok);
+  if(zone==='pool') delete ans.q3[tok.dataset.star]; else ans.q3[tok.dataset.star]=zone;
+}
+function zoneAt(x,y){const el=document.elementFromPoint(x,y);const z=el&&el.closest('[data-zone]');return z?z.dataset.zone:null}
+function bindTokens(){
+  picked=null;
+  document.querySelectorAll('.tok').forEach(tok=>{
+    tok.addEventListener('pointerdown',e=>{
+      if(solved) return; e.preventDefault();
+      const r=tok.getBoundingClientRect(), ox=e.clientX-r.left, oy=e.clientY-r.top, sx=e.clientX, sy=e.clientY;
+      let moved=false, ph=null, lastZone=null;
+      const move=ev=>{
+        if(!moved&&Math.hypot(ev.clientX-sx,ev.clientY-sy)<5) return;
+        if(!moved){moved=true; ph=document.createElement('div'); ph.className='ph'; tok.after(ph); tok.classList.add('drag'); document.body.appendChild(tok);}
+        tok.style.left=(ev.clientX-ox)+'px'; tok.style.top=(ev.clientY-oy)+'px';
+        const z=zoneAt(ev.clientX,ev.clientY);
+        if(z!==lastZone){document.querySelectorAll('.zone').forEach(el=>el.classList.toggle('over',el.dataset.zone===z));lastZone=z}
+      };
+      const up=ev=>{
+        window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up);
+        document.querySelectorAll('.zone').forEach(el=>el.classList.remove('over'));
+        if(!moved){ // tap: pick / unpick
+          document.querySelectorAll('.tok').forEach(t=>t.classList.remove('pick'));
+          picked=picked===tok?null:tok; if(picked) tok.classList.add('pick'); return;
+        }
+        tok.classList.remove('drag'); tok.style.left=tok.style.top='';
+        const z=zoneAt(ev.clientX,ev.clientY);
+        if(z){placeTok(tok,z)} else {ph.before(tok)}
+        ph.remove(); clearMarks();
+      };
+      window.addEventListener('pointermove',move); window.addEventListener('pointerup',up); window.addEventListener('pointercancel',up);
+    });
+    tok.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();document.querySelectorAll('.tok').forEach(t=>t.classList.remove('pick'));picked=picked===tok?null:tok;if(picked)tok.classList.add('pick')}});
+  });
+  document.querySelectorAll('[data-zone]').forEach(z=>{
+    const go=()=>{if(!picked||solved) return; placeTok(picked,z.dataset.zone); picked.classList.remove('pick'); picked.focus({preventScroll:true}); picked=null; clearMarks()};
+    z.addEventListener('click',e=>{if(e.target.closest('.tok')) return; go()});
+    z.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('.tok')){e.preventDefault();go()}});
+  });
+}
+function correct(){
+  const by=(k,dir)=>S.reduce((p,c)=>(dir==='bright'?c[k]<p[k]:c[k]>p[k])?c:p).n;
+  return {q1:by('m',P.q1), q2:by('M',P.q2), qr:String(RQ.d), qc:S.reduce((p,c)=>(P.qc==='hot'?c.c<p.c:c.c>p.c)?c:p).n, q3:Object.fromEntries(S.map(s=>[s.n,cat(s)]))};
+}
+function paint1(show){
+  const C=correct();
+  const mark=(q,ok)=>{const m=$({q1:'m1',q2:'m2',qr:'mr',qc:'mc'}[q]);m.textContent=ok?'정답':'다시 생각해 봐요';m.className='mark '+(ok?'ok':'no')};
+  ['q1','q2','qr','qc'].forEach(q=>{
+    const ok=ans[q]===C[q]; mark(q,ok);
+    document.querySelectorAll(`.opts[data-q="${q}"] .opt`).forEach(b=>{
+      b.classList.remove('ok','no');
+      if(show&&b.dataset.v===C[q]) b.classList.add('ok'); else if(b.dataset.v===ans[q]) b.classList.add(ok?'ok':'no');
+    });
+  });
+  return {ok1:ans.q1===C.q1, ok2:ans.q2===C.q2, okr:ans.qr===C.qr, okc:ans.qc===C.qc};
+}
+function paint2(show){
+  const C=correct(); let all=true;
+  S.forEach(st=>{
+    const tok=document.querySelector(`.tok[data-star="${st.n}"]`); if(!tok) return;
+    if(show) placeTok(tok,C.q3[st.n]);
+    const ok=ans.q3[st.n]===C.q3[st.n]; if(!ok) all=false;
+    tok.classList.remove('ok','no'); tok.classList.add(ok?'ok':'no');
+  });
+  $('m3').textContent=all?'정답':'다시 생각해 봐요'; $('m3').className='mark '+(all?'ok':'no');
+  return all;
+}
+function setStage(n){
+  stage=n;
+  ['q1','q2','qr','qc'].forEach(id=>$(id).hidden=n!==1);
+  $('q3').hidden=n!==2; $('hintrow').hidden=n!==2;
+  if(n!==2){ $('hint').hidden=true; $('btnHint').textContent='힌트 열기 · 별을 끌어 거리 바꿔 보기'; $('btnHint').setAttribute('aria-expanded','false'); }
+  $('qno').innerHTML=`문제 ${qn} <span class="stage">${n===1?'1단계 · 1~4번':'2단계 · 5번'}</span>`;
+  $('btnCheck').disabled=false;
+}
+function goStage2(note){
+  setStage(2);
+  const fb=$('fb'); fb.hidden=true;
+  const sn=$('stageNote'); sn.hidden=!note; sn.innerHTML=note||'';
+  $('qno').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+}
+function gradeQ(q,ok,t){ // returns gain for this grading
+  if(qs[q].done) return 0;
+  if(ok){ qs[q].done=true; return t===1?((q==='q3'&&hintUsed)?2:PTS[q][0]):0; }
+  return -PTS[q][1];
+}
+const ptList=(gain,qsList)=>qsList.filter(q=>gain[q]).map(q=>`${QNUM[q]}번${ptTag(gain[q])}${q==='q3'&&hintUsed&&gain[q]>0?' <small>(힌트 사용)</small>':''}`).join(' · ');
+$('btnCheck').onclick=()=>{
+  if(solved) return;
+  const fb=$('fb');
+  if(stage===1){
+    if(!ans.q1||!ans.q2||!ans.qr||!ans.qc){fb.hidden=false;fb.className='fb bad';fb.textContent='아직 고르지 않은 답이 있어요. 1~4번을 모두 골라 주세요.';return}
+    tries1++;
+    const r=paint1(false);
+    const gain={q1:gradeQ('q1',r.ok1,tries1),q2:gradeQ('q2',r.ok2,tries1),qr:gradeQ('qr',r.okr,tries1),qc:gradeQ('qc',r.okc,tries1)};
+    const net=gain.q1+gain.q2+gain.qr+gain.qc; s1pts+=net; addScore(net);
+    const line=ptList(gain,['q1','q2','qr','qc']);
+    if(r.ok1&&r.ok2&&r.okr&&r.okc){
+      goStage2(`1~4번 정답!${tries1===1?' 한 번에 맞혔어요.':''}${line?' '+line:''} — 이제 표를 보고 5번을 풀어 보세요.`);
+    }else{
+      stat.streak=0; updateStats();
+      const tips=[];
+      if(!r.ok1) tips.push('1번: 우리 눈에 보이는 밝기는 <b>겉보기 등급</b>으로 비교해요. 등급 값이 작을수록 밝아요.');
+      if(!r.ok2) tips.push('2번: 실제 밝기는 모든 별을 10 pc에 놓고 비교한 <b>절대 등급</b>으로 비교해요.');
+      if(!r.okr) tips.push(`3번: ${RQ.t==='m'?'우리 눈에 보이는 밝기는 <b>겉보기 등급</b>':'실제 밝기는 <b>절대 등급</b>'}으로 비교해요. 두 별의 등급 차이를 구하고, 1등급 차이마다 약 2.5배씩 밝기가 달라진다는 것을 이용해 보세요.`);
+      if(!r.okc) tips.push('4번: 별의 색깔로 표면 온도를 비교해요. 표면 온도가 높은 별일수록 파란색, 낮은 별일수록 붉은색을 띠어요.');
+      fb.hidden=false; fb.className='fb bad';
+      fb.innerHTML=`틀린 곳이 있어요. 빨간 답을 고쳐서 다시 채점해 보세요.${line?`<div style="margin-top:4px">${line}</div>`:''}<ul>${tips.map(t=>`<li>${t}</li>`).join('')}</ul>`;
+    }
+    return;
+  }
+  // stage 2
+  if(S.some(s=>!ans.q3[s.n])){fb.hidden=false;fb.className='fb bad';fb.textContent='별 다섯 개를 모두 칸에 넣어 주세요.';return}
+  tries2++;
+  const ok=paint2(false);
+  const g4=gradeQ('q3',ok,tries2);
+  $('stageNote').hidden=true;
+  if(ok){
+    const perfect=tries1===1&&tries2===1, double=perfect&&stat.streak>=1;
+    let net=g4, line=ptList({q3:g4},['q3']);
+    if(perfect){
+      const total=(s1pts+g4+BONUS)*(double?2:1); net=total-s1pts;
+      line+=` · 한 번에 모두 맞힘 보너스${ptTag(BONUS)}`; if(double) line+=` <span class="combo">연속 ${stat.streak+1}문제 한 번에! 점수 2배</span>`;
+      line+=` → 이번 문제 총 <b>+${total}점</b>`;
+    } else if(!line) line='다시 고쳐 맞혀서 5번 점수는 없어요.';
+    addScore(net);
+    solved=true; stat.solved++; if(perfect){stat.first++;stat.streak++} else stat.streak=0;
+    updateStats();
+    fb.hidden=false; fb.className='fb good';
+    let n=4; fb.innerHTML=`모두 정답! ${perfect?'한 번에 맞혔어요.':''} <b id="cd">${n}</b>초 뒤 새 별들로 다음 문제가 나옵니다. <button class="btn" id="goNow" type="button">바로 다음 문제</button><div style="margin-top:4px">${line}</div>`;
+    $('goNow').onclick=newProblem; $('btnCheck').disabled=true;
+    const tick=()=>{n--; if(n<=0) newProblem(); else {const c=$('cd'); if(c) c.textContent=n; timer=setTimeout(tick,1000)}};
+    timer=setTimeout(tick,1000);
+  }else{
+    stat.streak=0; updateStats();
+    fb.hidden=false; fb.className='fb bad';
+    fb.innerHTML=`빨간 테두리 별을 다른 칸으로 옮겨서 다시 채점해 보세요.<ul><li>5번: 겉보기 등급과 절대 등급을 비교해 보세요. 힌트의 예시 별을 10 pc보다 가깝게, 멀게 옮겨 보며 두 등급이 어떻게 달라지는지 확인해 보세요.</li></ul>`;
+  }
+};
+$('btnAnswer').onclick=()=>{
+  if(solved) return;
+  const C=correct(), fb=$('fb');
+  stat.streak=0; updateStats();
+  if(stage===1){
+    ans.q1=C.q1; ans.q2=C.q2; ans.qr=C.qr; ans.qc=C.qc; paint1(true);
+    qs.q1.done=qs.q2.done=qs.qr.done=qs.qc.done=true; tries1=99;
+    $('btnCheck').disabled=true;
+    fb.hidden=false; fb.className='fb good';
+    fb.innerHTML=`정답을 확인하세요.<ul>
+      <li>1번: 겉보기 등급이 가장 ${P.q1==='bright'?'작은':'큰'} 별 → <b>${C.q1}</b></li>
+      <li>2번: 절대 등급이 가장 ${P.q2==='bright'?'작은':'큰'} 별 → <b>${C.q2}</b></li>
+      <li>3번: ${(()=>{const k=RQ.t,A=S.find(x=>x.n===RQ.a),B=S.find(x=>x.n===RQ.b);return `${RQ.t==='m'?'겉보기':'절대'} 등급 ${RQ.a} ${f1(A[k])}, ${RQ.b} ${f1(B[k])} → ${RQ.d}등급 차이 → 2.5${RQ.d>1?`<sup>${RQ.d}</sup>`:''} ≈ <b>${RATIO[RQ.d].replace('약 ','')}</b>`})()}${RQ.d===5?' (5등급 차이는 정확히 100배)':''}</li>
+      <li>4번: 표면 온도는 파란색 &gt; 청백색 &gt; 백색 &gt; 황백색 &gt; 황색 &gt; 주황색 &gt; 적색 순 → 가장 ${P.qc==='hot'?'높은':'낮은'} 별은 <b>${C.qc}</b> (${SCOL[S.find(x=>x.n===C.qc).c][0]})</li></ul>
+      <button class="btn primary" id="toS2" type="button">5번 풀기 →</button>`;
+    $('toS2').onclick=()=>goStage2('');
+    return;
+  }
+  ans.q3={...C.q3}; paint2(true); qs.q3.done=true; solved=true; clearTimeout(timer); $('btnCheck').disabled=true;
+  const sign=s=>s.m<s.M?'<':s.m>s.M?'>':'=';
+  $('stageNote').hidden=true;
+  fb.hidden=false; fb.className='fb good';
+  fb.innerHTML=`정답을 확인하세요.<ul>
+    <li>5번: ${S.map(s=>`${s.n} (${f1(s.m)} ${sign(s)} ${f1(s.M)})`).join(', ')} → 겉보기 &lt; 절대면 가깝다, &gt;면 멀다, =면 10 pc</li></ul>
+    <button class="btn primary" id="goNext" type="button">다음 문제 →</button>`;
+  $('goNext').onclick=newProblem;
+};
+function updateStats(){$('sSolved').textContent=stat.solved;$('sFirst').textContent=stat.first;$('sStreak').textContent=stat.streak}
+
+/* ---------- hint lab: drag a star along the distance line ---------- */
+const VW=720, EX=56, AY=140, X0=110, X1=700, DMIN=1, DMAX=1000;
+const xOf=d=>X0+(Math.log10(d)-Math.log10(DMIN))/(Math.log10(DMAX)-Math.log10(DMIN))*(X1-X0);
+const dOf=x=>Math.pow(10,Math.log10(DMIN)+(x-X0)/(X1-X0)*(Math.log10(DMAX)-Math.log10(DMIN)));
+let cur=null, curD=10, anim=null;
+const EXS={n:'X',M:1,m:1+5*Math.log10(2.5)}; // 예시 별: 절대 등급 1, 처음 위치 25 pc
+const homeD=s=>10*Math.pow(10,(s.m-s.M)/5);
+const appM=(s,d)=>s.M+5*Math.log10(d/10);
+function starPath(cx,cy,r){let p='';for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;p+=(i?'L':'M')+(cx+rr*Math.cos(a)).toFixed(1)+' '+(cy+rr*Math.sin(a)).toFixed(1)}return p+'Z'}
+const sizeFor=m=>Math.max(5,Math.min(30,15-1.5*m));
+function initLab(){
+  cancelAnimationFrame(anim); cur=EXS; curD=homeD(EXS); drawLab();
+}
+function drawLab(){
+  const sv=$('sim'), m=appM(cur,curD), x=xOf(curD), x10=xOf(10), r=sizeFor(m), rM=sizeFor(cur.M);
+  let g='';
+  // axis + ticks
+  g+=`<line x1="${EX}" y1="${AY}" x2="${X1}" y2="${AY}" stroke="#4d6aa3" stroke-width="1.5"/>`;
+  [1,2,5,10,20,50,100,200,500,1000].forEach(d=>{const tx=xOf(d);
+    g+=`<line x1="${tx}" y1="${AY+64}" x2="${tx}" y2="${AY+70}" stroke="#a9bde6"/><text x="${tx}" y="${AY+84}" text-anchor="middle" fill="#a9bde6" font-size="12" font-family="JetBrains Mono,monospace">${d}</text>`});
+  g+=`<line x1="${X0}" y1="${AY+67}" x2="${X1}" y2="${AY+67}" stroke="#a9bde6" stroke-opacity=".5"/>`;
+  g+=`<text x="${X1}" y="${AY+102}" text-anchor="end" fill="#a9bde6" font-size="12" font-family="Noto Sans KR,sans-serif">지구로부터의 거리 (pc)</text>`;
+  // 10 pc arc (centered on Earth)
+  const R=x10-EX; g+=`<path d="M${EX+R*Math.cos(.5)} ${AY-R*Math.sin(.5)} A${R} ${R} 0 0 1 ${EX+R*Math.cos(.5)} ${AY+R*Math.sin(.5)}" fill="none" stroke="#ffffff" stroke-opacity=".75" stroke-width="2"/>`;
+  g+=`<text x="${x10+8}" y="${AY-96}" fill="#ffffff" font-size="13" font-weight="700" font-family="Noto Sans KR,sans-serif">거리 10 pc</text>`;
+  // near / far hints
+  g+=`<text x="${(EX+x10)/2-14}" y="26" text-anchor="middle" fill="#7fe3f0" font-size="12" font-family="Noto Sans KR,sans-serif">◀ 가까워짐: 밝아짐 (등급 값↓)</text>`;
+  g+=`<text x="${(x10+X1)/2}" y="26" text-anchor="middle" fill="#ffc94a" font-size="12" font-family="Noto Sans KR,sans-serif">멀어짐: 어두워짐 (등급 값↑) ▶</text>`;
+  // earth
+  g+=`<circle cx="${EX}" cy="${AY}" r="17" fill="#2f7fd6"/><path d="M${EX-9} ${AY-6}q6-6 12 0t8 6q-4 6-10 4t-10-10z" fill="#4caf50"/><text x="${EX}" y="${AY-26}" text-anchor="middle" fill="#e6ecf7" font-size="13" font-weight="700" font-family="Noto Sans KR,sans-serif">지구</text>`;
+  // sight line
+  g+=`<line x1="${EX+18}" y1="${AY}" x2="${x}" y2="${AY}" stroke="#7ddf7a" stroke-width="2.5"/>`;
+  // ghost at 10 pc (absolute magnitude)
+  if(Math.abs(x-x10)>4){
+    g+=`<circle cx="${x10}" cy="${AY}" r="${rM+6}" fill="#fff6c8" fill-opacity=".12"/><path d="${starPath(x10,AY,rM)}" fill="none" stroke="${COL[cur.n][0]}" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+    g+=`<text x="${x10}" y="${AY+rM+18}" text-anchor="middle" fill="#fff6c8" font-size="12" font-family="Noto Sans KR,sans-serif">10 pc에선 ${f1(cur.M)}등급</text>`;
+  }
+  // the draggable star
+  g+=`<g id="dragStar" style="cursor:grab"><circle cx="${x}" cy="${AY}" r="${r*1.9}" fill="${COL[cur.n][0]}" fill-opacity=".2"/><circle cx="${x}" cy="${AY}" r="${r*1.35}" fill="${COL[cur.n][0]}" fill-opacity=".3"/>`+
+    `<path d="${starPath(x,AY,r)}" fill="${COL[cur.n][0]}" stroke="#ffffff" stroke-width="1.5"/><circle cx="${x}" cy="${AY}" r="${Math.max(r*1.9,24)}" fill="transparent"/></g>`;
+  g+=`<text x="${x}" y="${AY-r*1.9-10}" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700" font-family="Noto Sans KR,sans-serif">예시 별 · 겉보기 ${f1(m)}등급</text>`;
+  sv.innerHTML=g;
+  const sign=Math.abs(m-cur.M)<0.05?'=':m<cur.M?'<':'>';
+  const verdict=sign==='='?'10 pc에 있다':sign==='<'?'10 pc보다 가깝다':'10 pc보다 멀다';
+  $('readout').innerHTML=`<span><b>예시 별</b></span><span>거리 <span class="v">${curD<10?curD.toFixed(1):Math.round(curD)} pc</span></span>
+    <span>겉보기 등급 <span class="v">${f1(m)}</span></span><span class="cmp">${sign}</span><span>절대 등급 <span class="v">${f1(cur.M)}</span></span>
+    <span class="verdict">→ ${verdict}</span>`;
+  bindDrag();
+}
+function bindDrag(){
+  const sv=$('sim'), st=$('dragStar');
+  st.addEventListener('pointerdown',e=>{
+    cancelAnimationFrame(anim); st.setPointerCapture(e.pointerId); st.style.cursor='grabbing';
+    const move=ev=>{const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const p=pt.matrixTransform(sv.getScreenCTM().inverse());
+      curD=Math.min(DMAX,Math.max(DMIN,dOf(p.x)));
+      // snap to 10 pc and to the table position
+      if(Math.abs(xOf(curD)-xOf(10))<6) curD=10;
+      drawLab();};
+    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up)};
+    window.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
+  });
+}
+function animateTo(d){
+  cancelAnimationFrame(anim); const a=Math.log10(curD), b=Math.log10(d), t0=performance.now(), dur=matchMedia('(prefers-reduced-motion: reduce)').matches?1:700;
+  const step=t=>{const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3); curD=Math.pow(10,a+(b-a)*e); drawLab(); if(k<1) anim=requestAnimationFrame(step)};
+  anim=requestAnimationFrame(step);
+}
+$('btn10').onclick=()=>animateTo(10);
+$('btnNear').onclick=()=>animateTo(2.5);
+$('btnFar').onclick=()=>animateTo(40);
+$('btnHint').onclick=()=>{
+  const h=$('hint'); h.hidden=!h.hidden; $('btnHint').textContent=h.hidden?'힌트 열기 · 별을 끌어 거리 바꿔 보기':'힌트 닫기'; $('btnHint').setAttribute('aria-expanded',String(!h.hidden));
+  if(!h.hidden){ if(stage===2&&!solved&&!qs.q3.done) hintUsed=true; initLab(); }
+  updHintNote();
+};
+
+
+/* ---------- tabs ---------- */
+function showTab(t){
+  const q=t==='quiz';
+  $('paneQuiz').hidden=!q; $('paneExplore').hidden=q;
+  $('tbQuiz').setAttribute('aria-selected',String(q)); $('tbExplore').setAttribute('aria-selected',String(!q));
+  if(!q) exDraw();
+}
+$('tbQuiz').onclick=()=>showTab('quiz'); $('tbExplore').onclick=()=>showTab('explore');
+
+/* ---------- free exploration ---------- */
+const EO={x:235,y:420}, R10=330;
+const EXSTARS=[
+  {n:'태양',m:-26.8,M:4.8,ang:90,c:'#ffd23f',col:'황색'},
+  {n:'베텔게우스',m:0.5,M:-5.1,ang:63,c:'#ff5a3d',col:'적색'},
+  {n:'데네브',m:1.3,M:-8.7,ang:41,c:'#f2f6ff',col:'백색'},
+  {n:'북극성',m:2.1,M:-3.7,ang:23,c:'#fff1b8',col:'황백색'},
+  {n:'시리우스',m:-1.5,M:1.4,ang:7,c:'#e3ecff',col:'백색'},
+];
+const realD=s=>10*Math.pow(10,(s.m-s.M)/5);
+// radius on screen from distance (pc): log-compressed, 10 pc sits on the arc
+const rOf=d=>{const L=Math.log10(d/10);return L>=0?R10*(1+0.32*L):R10*Math.max(0.12,1+0.1*L)};
+const dOfR=r=>{const k=r/R10;return k>=1?10*Math.pow(10,(k-1)/0.32):10*Math.pow(10,(k-1)/0.1)};
+let exShowArrows=true, exAnim=null;
+function exReset(){EXSTARS.forEach(s=>{s.d=realD(s);s.a=s.ang*Math.PI/180})}
+exReset();
+const posOf=s=>{const r=rOf(s.d);return {x:EO.x+r*Math.cos(s.a), y:EO.y-r*Math.sin(s.a)}};
+const appOf=s=>s.M+5*Math.log10(s.d/10);
+const fmtD=d=>d<0.001?`${(d*206265).toFixed(d*206265<10?1:0)} AU (약 ${d.toExponential(1).replace('e','×10^')} pc)`:d<10?`${d.toFixed(d<1?3:1)} pc`:`${Math.round(d)} pc`;
+const bg=(()=>{let r=7,g='';const rnd=()=>(r=(r*9301+49297)%233280)/233280;for(let i=0;i<170;i++){g+=`<circle cx="${(rnd()*1000).toFixed(1)}" cy="${(rnd()*480).toFixed(1)}" r="${(rnd()*1.1+.3).toFixed(2)}" fill="#fff" fill-opacity="${(rnd()*.6+.2).toFixed(2)}"/>`}return g})();
+function glowStar(x,y,m,c,id){
+  const r=Math.max(4,Math.min(26,11-1.25*m));
+  return `<g class="st" data-n="${id}"><circle cx="${x}" cy="${y}" r="${r*2.4}" fill="${c}" fill-opacity=".12"/><circle cx="${x}" cy="${y}" r="${r*1.5}" fill="${c}" fill-opacity=".28"/><circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${x-r*.3}" cy="${y-r*.3}" r="${r*.45}" fill="#fff" fill-opacity=".7"/><circle cx="${x}" cy="${y}" r="${Math.max(r*1.6,22)}" fill="transparent"/></g>`;
+}
+function exDraw(){
+  let g=`<defs><marker id="exArr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b9c3d6"/></marker></defs>`+bg;
+  // distance guides
+  const yl=462, xAt=r=>EO.x+Math.sqrt(Math.max(0,r*r-(yl-EO.y)*(yl-EO.y)));
+  [[0.01,'0.01 pc'],[1,'1 pc'],[100,'100 pc']].forEach(([d,l])=>{const r=rOf(d);g+=`<circle cx="${EO.x}" cy="${EO.y}" r="${r}" fill="none" stroke="#4d6aa3" stroke-opacity=".35" stroke-dasharray="4 6"/><text x="${xAt(r)+4}" y="${yl+4}" fill="#7f93bd" font-size="12" font-family="JetBrains Mono,monospace">${l}</text>`});
+  g+=`<circle cx="${EO.x}" cy="${EO.y}" r="${R10}" fill="none" stroke="#6fa8ff" stroke-opacity=".9" stroke-width="1.6"/>`;
+  g+=`<text x="${xAt(R10)+6}" y="${yl+5}" fill="#e6ecf7" font-size="14" font-family="Noto Sans KR,sans-serif">— 거리 10 pc</text>`;
+  // earth
+  g+=`<circle cx="${EO.x}" cy="${EO.y}" r="30" fill="#2f6fbf"/><path d="M${EO.x-16} ${EO.y-10}q10-10 22-2t12 10q-8 10-18 6t-16-14z M${EO.x-4} ${EO.y+8}q8-2 14 4q-4 8-12 6z" fill="#5bb36a"/><circle cx="${EO.x}" cy="${EO.y}" r="30" fill="none" stroke="#9cc3ff" stroke-opacity=".5"/>`;
+  g+=`<text x="${EO.x-40}" y="${EO.y+6}" text-anchor="end" fill="#e6ecf7" font-size="16" font-family="Noto Sans KR,sans-serif">지구</text>`;
+  const lbl=[];
+  EXSTARS.forEach((s,i)=>{
+    const p=posOf(s), m=appOf(s), g10={x:EO.x+R10*Math.cos(s.a), y:EO.y-R10*Math.sin(s.a)};
+    const far=Math.hypot(p.x-g10.x,p.y-g10.y)>14;
+    if(exShowArrows&&far){
+      const rM=Math.max(4,Math.min(26,11-1.25*s.M));
+      g+=`<circle cx="${g10.x}" cy="${g10.y}" r="${rM}" fill="${s.c}" fill-opacity=".55" stroke="#fff" stroke-opacity=".6" stroke-dasharray="3 3"/>`;
+      const dx=g10.x-p.x, dy=g10.y-p.y, L=Math.hypot(dx,dy), sr=Math.max(4,Math.min(26,11-1.25*m))+6;
+      g+=`<line x1="${p.x+dx/L*sr}" y1="${p.y+dy/L*sr}" x2="${g10.x-dx/L*(rM+6)}" y2="${g10.y-dy/L*(rM+6)}" stroke="#b9c3d6" stroke-width="2" marker-end="url(#exArr)"/>`;
+      const close=Math.hypot(p.x-g10.x,p.y-g10.y)<110;
+      lbl.push(`<text x="${close?g10.x-rM-8:g10.x+rM+8}" y="${g10.y+(close?24:18)}" text-anchor="${close?'end':'start'}" fill="#ffffff" font-size="14" paint-order="stroke" stroke="#071230" stroke-width="4" font-family="Noto Sans KR,sans-serif">절대 등급: ${f1(s.M)}</text>`);
+    }
+    g+=glowStar(p.x,p.y,m,s.c,i);
+    const right=p.x<860, ly=p.y<44?p.y+30:p.y;
+    lbl.push(`<text x="${p.x+(right?24:-24)}" y="${ly-8}" text-anchor="${right?'start':'end'}" fill="#ffffff" font-size="15" font-weight="700" paint-order="stroke" stroke="#071230" stroke-width="4" font-family="Noto Sans KR,sans-serif">${s.n}</text>`+
+      `<text x="${p.x+(right?24:-24)}" y="${ly+12}" text-anchor="${right?'start':'end'}" fill="#ffffff" font-size="14" paint-order="stroke" stroke="#071230" stroke-width="4" font-family="Noto Sans KR,sans-serif">겉보기 등급: <tspan font-weight="700" fill="#ffd27f">${f1(m)}</tspan></text>`);
+  });
+  $('exSky').innerHTML=g+lbl.join('');
+  $('exBody').innerHTML=EXSTARS.map(s=>{const m=appOf(s), sg=Math.abs(m-s.M)<0.05?'=':m<s.M?'<':'>';
+    const vd=sg==='='?'10 pc에 있다':sg==='<'?'10 pc보다 가깝다':'10 pc보다 멀다';
+    return `<tr><td class="nm"><span class="dot" style="background:${s.c}"></span>${s.n}</td><td class="nm">${s.col}</td><td>${fmtD(s.d)}</td><td>${f1(m)}</td><td class="sg">${sg}</td><td>${f1(s.M)}</td><td class="vd ${sg==='<'?'near':sg==='>'?'far':''}">${vd}</td></tr>`}).join('');
+  exBind();
+}
+function exBind(){
+  const sv=$('exSky');
+  sv.querySelectorAll('.st').forEach(el=>el.addEventListener('pointerdown',e=>{
+    e.preventDefault(); cancelAnimationFrame(exAnim);
+    const s=EXSTARS[+el.dataset.n];
+    const move=ev=>{const pt=sv.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;const p=pt.matrixTransform(sv.getScreenCTM().inverse());
+      const x=Math.max(10,Math.min(990,p.x)), y=Math.max(10,Math.min(470,p.y));
+      let r=Math.hypot(x-EO.x,EO.y-y); r=Math.max(R10*0.1,r);
+      s.a=Math.atan2(EO.y-y,x-EO.x); s.d=dOfR(r);
+      if(Math.abs(r-R10)<7) s.d=10;
+      exDraw();};
+    const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up)};
+    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+  }));
+}
+function exAnimate(target){
+  cancelAnimationFrame(exAnim);
+  const from=EXSTARS.map(s=>({L:Math.log10(s.d),a:s.a})), to=EXSTARS.map((s,i)=>target(s,i));
+  const t0=performance.now(), dur=matchMedia('(prefers-reduced-motion: reduce)').matches?1:1100;
+  const step=t=>{const k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3);
+    EXSTARS.forEach((s,i)=>{s.d=Math.pow(10,from[i].L+(Math.log10(to[i].d)-from[i].L)*e); s.a=from[i].a+(to[i].a-from[i].a)*e});
+    exDraw(); if(k<1) exAnim=requestAnimationFrame(step)};
+  exAnim=requestAnimationFrame(step);
+}
+$('exAll10').onclick=()=>exAnimate(s=>({d:10,a:s.a}));
+$('exReset').onclick=()=>exAnimate(s=>({d:realD(s),a:s.ang*Math.PI/180}));
+$('exArrows').onclick=()=>{exShowArrows=!exShowArrows;$('exArrows').textContent=exShowArrows?'절대 등급 화살표 숨기기':'절대 등급 화살표 보이기';$('exArrows').setAttribute('aria-pressed',String(exShowArrows));exDraw()};
+/* ---------- star colour & surface temperature ---------- */
+const TCLS=[{n:'파란색',lo:25000,hi:50000,c:'#3f6fe8',mid:32000,ex:'민타카(오리온자리)'},{n:'청백색',lo:10000,hi:25000,c:'#a9cbff',mid:15000,ex:'리겔, 스피카'},{n:'백색',lo:7500,hi:10000,c:'#ffffff',mid:9000,ex:'시리우스, 베가, 데네브'},{n:'황백색',lo:6000,hi:7500,c:'#fff1b8',mid:6700,ex:'프로키온, 북극성'},{n:'황색',lo:5000,hi:6000,c:'#ffd23f',mid:5800,ex:'태양, 카펠라'},{n:'주황색',lo:3500,hi:5000,c:'#ff9433',mid:4300,ex:'아크투르스, 알데바란'},{n:'적색',lo:2000,hi:3500,c:'#e5483a',mid:3000,ex:'베텔게우스, 안타레스'}];
+const TMAX=40000, TMIN=2500;
+const tOfV=v=>TMAX*Math.pow(TMIN/TMAX,v/1000), vOfT=t=>1000*Math.log(t/TMAX)/Math.log(TMIN/TMAX);
+const clsOf=t=>TCLS.find(c=>t>=c.lo)||TCLS[TCLS.length-1];
+const fmtK=t=>{const r=t>=10000?Math.round(t/1000)*1000:Math.round(t/100)*100;return r.toLocaleString('ko-KR')+' K'};
+function tDraw(){
+  const t=tOfV(+$('tSlider').value), c=clsOf(t);
+  $('tStar').innerHTML=`<circle cx="80" cy="80" r="70" fill="${c.c}" fill-opacity=".14"/><circle cx="80" cy="80" r="50" fill="${c.c}" fill-opacity=".3"/><circle cx="80" cy="80" r="32" fill="${c.c}"/><circle cx="70" cy="70" r="12" fill="#fff" fill-opacity=".6"/>`;
+  $('tTemp').textContent='약 '+fmtK(t); $('tName').textContent=c.n; $('tName').style.color=c.c; $('tEx').textContent='예: '+c.ex;
+  document.querySelectorAll('.tseg').forEach(b=>b.classList.toggle('on',b.dataset.n===c.n));
+}
+$('tSegs').innerHTML=TCLS.map(c=>`<button class="tseg" type="button" data-n="${c.n}" style="background:${c.c}${c.n==='파란색'?';color:#fff':''}">${c.n}</button>`).join('');
+$('tSegs').querySelectorAll('.tseg').forEach(b=>b.onclick=()=>{const c=TCLS.find(x=>x.n===b.dataset.n);$('tSlider').value=Math.round(vOfT(c.mid));tDraw()});
+$('tBody').innerHTML=TCLS.map((c,i)=>`<tr><td class="nm"><span class="dot" style="background:${c.c};border:1px solid rgba(0,0,0,.25)"></span>${c.n}</td><td>${i===0?'약 25,000 K 이상':i===TCLS.length-1?'약 3,500 K 이하':`약 ${c.lo.toLocaleString('ko-KR')} ~ ${c.hi.toLocaleString('ko-KR')} K`}</td><td>${c.ex}</td></tr>`).join('');
+$('tSlider').value=Math.round(vOfT(5800)); $('tSlider').oninput=tDraw; tDraw();
+if(location.hash==='#explore') showTab('explore');
+
+newProblem(); updateStats();
+})();
+</script>
+
+</body></html>
