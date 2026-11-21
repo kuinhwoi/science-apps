@@ -145,7 +145,7 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
       <div class="mode box"><div class="k">PART</div><div class="mode-v" id="modeV">도안</div><div class="mode-s" id="modeS">STEP 01 / 22</div></div>
       <div class="tools box"><div class="k">TOOLS · 도구</div><div id="toolList"></div></div>
     </div>
-    <div class="hint"><span class="key-only">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 &nbsp;|&nbsp; </span><span class="touch-only">한 손가락: 돌리기 · 두 손가락: 확대 <br></span>제작: 과학교사 구인회, 노정현 · v1.1 (2026.11.22)</div>
+    <div class="hint"><span class="key-only">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 &nbsp;|&nbsp; </span><span class="touch-only">한 손가락: 돌리기 · 두 손가락: 확대 <br></span>제작: 과학교사 구인회, 노정현 · v1.2 (2026.11.22)</div>
     <div class="vbtns"><button id="xrayBtn" class="pill">속 보기</button><button id="lblBtn" class="pill on">라벨</button></div>
   </div>
   <div id="panel">
@@ -596,14 +596,14 @@ const STEPS=[
     const d=ease(seg(t,.4,.58));joinTape.visible=true;joinTape.position.set(0,.08+(1-d)*7,0);
     placeE(-24,P2l.outer+.03,14);L('④',-10,.3,-2.5,'big');L('④',10,.3,-2.5,'big');if(t>.4)L('테이프로 잇기',0,.6,2.6,'warn big');L('접안부',-24,4.5,14)}},
  {g:'B',short:'④ 감기',title:'④ 감기',fig:'접안부 + ④ (이은 것)',
-  body:'접안부의 <b>눈 쪽 끝</b>(렌즈 통이 나온 쪽)에 ④번을 돌돌 감고 <b>끝을 양면테이프로 고정</b>. <b>접안부와 붙지 않아야 정상!</b>',
+  body:'접안부의 <b>눈 쪽 끝</b>(렌즈 통이 나온 쪽)에 ④번을 돌돌 감고 <b>끝을 양면테이프로 고정</b>. <b>접안부와 ④번 부품이 고정되지 않은 것이 정상이에요.</b>',
   warn:'④번을 접안부에 붙이면 안 돼요. 나중에 이 고리 안에서 접안부가 미끄러져야 초점을 맞출 수 있어요.',tools:['양면테이프'],dur:9,rot:0,cam:{p:[-3,19,22],t:[-21,2.5,-1]},
   apply(t,time){const cx=-25,tp=seg(t,.74,.82),pe=seg(t,.83,.92),p=.97*ease(seg(t,.04,.72))+.03*seg(t,.93,1);
     const E={s0:107.6,s1:108.8,w0:.2,w1:3.8,dir:'w'};
     P4.setDecor({tapes:[Object.assign({p:tp,peel:pe},E),{s0:53,s1:56,w0:0,w1:4,p:1,liner:false}]});
     const cy=rollMat(P4,p,cx,-3.5);const sl=t>=1?.7*Math.sin(time*2.2):0;placeE(cx,cy,sl);peelL(P4,E,pe);
     if(tp>0&&tp<1){rollAxis(tapeRoll,'z');show(tapeRoll,P4.group.position.x+108.2,.05,-5.3+3.6*tp)}
-    L('④ 감기',cx+8,.3,-3.5,'big');L('눈 쪽 끝에 맞춰',cx,cy+P4.R(p*109)+.3,-5.5,'warn');L('접안부엔 붙이지 않기',cx,cy+2.4,2.5,'bad big');if(t>=1)L('미끄러지면 정상',cx,cy,6.5,'good')}},
+    L('④ 감기',cx+8,.3,-3.5,'big');L('눈 쪽 끝에 맞춰',cx,cy+P4.R(p*109)+.3,-5.5,'warn');if(t>=1)L('미끄러지면 정상',cx,cy,6.5,'good')}},
  {g:'B',short:'⑤ 잇기',title:'⑤ 이어 붙이기',fig:'짧은 ⑤ 드로튜브 레일 2장 이어서',
   body:'짧은 ⑤번 2장도 이어 붙여 ④번 뒤에 <b>계속 감아요</b>. 목도리 같은 고리가 점점 <b>두꺼워져요</b>.',tools:['테이프','양면테이프'],dur:8,rot:0,cam:{p:[-4,19,21],t:[-21,3,-1]},
   apply(t){const cx=-25,tp=seg(t,.74,.82),pe=seg(t,.83,.92),p=.95*ease(seg(t,.04,.72))+.05*seg(t,.93,1);
@@ -613,7 +613,7 @@ const STEPS=[
     if(tp>0&&tp<1){rollAxis(tapeRoll,'z');show(tapeRoll,P5.group.position.x+34.25,.05,-5.3+3.6*tp)}
     L('⑤ 이어 붙이기',cx+12,.3,-3.5,'big');if(P5.group.position.x+17.5>cx+3)L('이음매',P5.group.position.x+17.5,.4,-1.2);L('고리가 두꺼워져요',cx,cy+P5.R(p*35)+.3,-3.5,'warn big')}},
  {g:'B',short:'③ 단단히',title:'③ 단단히 감기',fig:'③ 드로튜브 고정 띠 1 × 18cm',
-  body:'③번을 접안부 <b>맨 아래쪽</b>(고리 반대쪽 끝)에 감아요. ③번 <b>전체에 양면테이프</b>를 붙여 접안부에 단단히 고정!',
+  body:'<b>③번 전체에 양면테이프</b>를 붙이고, 접안부 <b>맨 아래쪽</b>(고리 반대쪽 끝)에 감아요.',
   warn:'③번은 접안부가 고리에서 빠지지 않게 막아 주는 멈춤 턱이에요.',tools:['양면테이프','가위'],dur:8.5,rot:0,cam:{p:[-4,13,13],t:[-24,3,-.5]},
   apply(t){const cx=-25,tp=seg(t,.02,.26),pe=seg(t,.28,.44),lift=ease(seg(t,.45,.5)),p=ease(seg(t,.5,.96));
     const E={s0:0,s1:18,w0:.12,w1:.88};
@@ -621,7 +621,7 @@ const STEPS=[
     const cy=P5.outer+.03;tube(P3,p,cx,cy,5);if(p===0)P3.group.position.y=lerp(.03,cy-P3.r0,lift);peelL(P3,E,pe);
     tube(P5,1,cx,cy,-3.5);tube(P4,1,cx,cy,-3.5);placeE(cx,cy,0);
     if(tp>0&&tp<1){rollAxis(tapeRoll,'x');show(tapeRoll,P3.group.position.x+18*tp,.05,5)}
-    if(t<.28)L('③ 전체에 양면테이프',cx+9,.3,6.2,'warn big');if(t>.5)L('맨 아래쪽에 단단히',cx,cy+P3.R(p*18)+.3,5,'big');if(t>.5)L('고리',cx,cy+P5.outer+.2,-3.5);if(t>.95)L('접안부 완성!',cx,cy+4.5,1,'good big')}},
+    if(t<.28)L('③ 전체에 양면테이프',cx+9,.3,6.2,'warn big');if(t>.5)L('③ 단단히 고정',cx,cy+P3.R(p*18)+.3,5,'big');if(t>.5)L('고리',cx,cy+P5.outer+.2,-3.5);if(t>.95)L('접안부 완성!',cx,cy+4.5,1,'good big')}},
 
  {g:'C',short:'경통 말기',title:'⑥ 경통 말기',fig:'⑥ 경통 19 × 25cm · 완성한 접안부',
   body:'⑥번의 <b>한쪽 옆 가장자리와 끝</b>에 양면테이프를 <b>ㄱ자</b>로 붙이고, <b>고리(④⑤)가 그 가장자리에 오게</b> 접안부를 올려 돌돌 말아요. <b>위·아래 지름이 같게!</b>',
