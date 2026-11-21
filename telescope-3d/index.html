@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>굴절 망원경 만들기 3D 가이드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600;800&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1b1b1b;--paper:#f6f3ea;--orange:#ff6a1f;--navy:#1f2a68;--line:2px solid #1b1b1b}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;overflow:hidden}
+#app{height:100vh;display:grid;grid-template-rows:1fr auto}
+#stage{position:relative;overflow:hidden;min-height:0}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#labels{position:absolute;inset:0;pointer-events:none}
+.box{background:rgba(250,248,242,.96);border:var(--line);border-radius:8px}
+.mono{font-family:'JetBrains Mono','Noto Sans KR',monospace}
+.fig{position:absolute;left:14px;top:14px;padding:10px 16px;max-width:62%}
+.fig-t{font:900 17px 'Noto Sans KR',sans-serif;letter-spacing:.02em}
+.fig-s{font:700 19px 'Noto Sans KR';margin-top:4px}
+.side{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.mode{padding:8px 16px;text-align:right;min-width:170px}
+.k{font:800 12px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6b6b6b}
+.mode-v{font:900 40px/1.05 'Noto Sans KR';margin-top:2px}
+.mode-s{font:800 16px 'JetBrains Mono',monospace;margin-top:2px}
+.tools{padding:8px 12px;min-width:170px;max-width:260px}
+#toolList{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.tool{display:flex;align-items:center;gap:8px;font:700 19px 'Noto Sans KR'}
+.tool i{width:14px;height:14px;border-radius:3px;border:1.5px solid #1b1b1b;flex:none}
+.tool.none{color:#888;font-weight:500;font-size:16px}
+.hint{position:absolute;left:14px;bottom:10px;font:600 14px 'Noto Sans KR';color:#3a3a3a;background:rgba(246,243,234,.78);padding:4px 10px;border-radius:6px}
+.vbtns{position:absolute;right:14px;bottom:12px;display:flex;gap:8px}
+.pill{font:800 18px 'Noto Sans KR';background:#fff;border:var(--line);border-radius:999px;padding:6px 16px;cursor:pointer}
+.pill.on{background:var(--ink);color:#fff}
+.lbl{position:absolute;left:0;top:0;white-space:nowrap;background:#fff;border:2px solid #1b1b1b;border-radius:999px;padding:3px 12px;font:800 19px 'JetBrains Mono','Noto Sans KR',monospace;will-change:transform}
+.lbl::after{content:'';position:absolute;left:50%;top:100%;width:2px;height:16px;background:#1b1b1b;transform:translateX(-1px)}
+.lbl.warn{border-color:var(--orange);color:#c2410c;background:#fff4ea}
+.lbl.warn::after{background:var(--orange)}
+.lbl.bad{border-color:#d62828;color:#d62828;background:#fff0f0}
+.lbl.bad::after{background:#d62828}
+.lbl.good{border-color:#2f8f3a;color:#22742c;background:#effaf0}
+.lbl.good::after{background:#2f8f3a}
+.lbl.big{font-size:24px;padding:5px 16px}
+#panel{display:grid;grid-template-columns:1.08fr 1fr;gap:10px;padding:10px;background:#1b1b1b}
+.card{background:var(--paper);border-radius:10px;padding:12px 16px;min-width:0}
+.card-h{display:flex;justify-content:space-between;align-items:center;font:800 14px 'JetBrains Mono','Noto Sans KR',monospace;letter-spacing:.08em;margin-bottom:8px}
+.cnt{border:1.5px solid #1b1b1b;border-radius:999px;padding:1px 10px;font-size:14px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.tab{font:800 19px 'Noto Sans KR';padding:8px 6px;border:2px solid #1b1b1b;border-radius:8px;background:#fff;cursor:pointer}
+.tab.on{background:#1b1b1b;color:#fff}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px}
+.chip{border:1.5px solid #b9b4a6;border-radius:8px;background:#fff;cursor:pointer;padding:6px 4px;text-align:center}
+.chip b{display:block;font:800 22px 'JetBrains Mono',monospace}
+.chip span{display:block;font:700 15px 'Noto Sans KR';margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.on{background:#1b1b1b;border-color:#1b1b1b;color:#fff}
+.chip.done{background:#ebe7dc}
+.ctrl{display:flex;gap:6px}
+.ctrl button{font:800 17px 'Noto Sans KR';border:2px solid #1b1b1b;background:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;letter-spacing:0}
+.ctrl button#next{background:#1b1b1b;color:#fff}
+.ht-title{font:900 32px/1.2 'Noto Sans KR'}
+.ht-title em{font-style:normal;display:inline-block;background:var(--navy);color:#fff;border-radius:6px;padding:0 10px;margin-right:10px;font-family:'JetBrains Mono',monospace}
+.ht-body{font:500 24px/1.45 'Noto Sans KR';margin-top:6px}
+.ht-body b{font-weight:900;color:#1f3fae}
+.ht-warn{display:none;margin-top:8px;border:2px solid var(--orange);background:#fff1e6;border-radius:8px;padding:6px 12px;font:700 20px/1.4 'Noto Sans KR';color:#9a3412}
+.ht-warn.show{display:block}
+.prog{height:6px;background:#ddd6c6;border-radius:3px;margin-top:10px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--orange)}
+.done-badge{display:inline-block;margin-left:10px;background:#2f8f3a;color:#fff;border-radius:6px;padding:0 10px;font-size:22px;vertical-align:middle}
+@media (max-width:900px){#panel{grid-template-columns:1fr}.ht-body{font-size:19px}.ht-title{font-size:24px}.mode-v{font-size:28px}.fig-s{font-size:15px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="labels"></div>
+    <div class="fig box"><div class="fig-t" id="figT">굴절 망원경 만들기 3D 가이드</div><div class="fig-s" id="figS"></div></div>
+    <div class="side">
+      <div class="mode box"><div class="k">PART</div><div class="mode-v" id="modeV">도안</div><div class="mode-s" id="modeS">STEP 01 / 22</div></div>
+      <div class="tools box"><div class="k">TOOLS · 도구</div><div id="toolList"></div></div>
+    </div>
+    <div class="hint">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 &nbsp;|&nbsp; 제작: 과학교사 구인회, 노정현 · v1.0 (2026.11.22)</div>
+    <div class="vbtns"><button id="xrayBtn" class="pill">속 보기</button><button id="lblBtn" class="pill on">라벨</button></div>
+  </div>
+  <div id="panel">
+    <div class="card">
+      <div class="card-h"><span>STEP · 만드는 순서</span><span class="cnt" id="cnt">1/22</span></div>
+      <div class="tabs" id="tabs"></div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span>HOW TO · 이렇게 해요</span><span class="ctrl"><button id="prev">◀ 이전</button><button id="replay">↻ 다시</button><button id="next">다음 ▶</button></span></div>
+      <div class="ht-title" id="htT"></div>
+      <div class="ht-body" id="htB"></div>
+      <div class="ht-warn" id="htW"></div>
+      <div class="prog"><i id="progBar"></i></div>
+    </div>
+  </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+const PI=Math.PI, TH=0.15;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const seg=(t,a,b)=>clamp((t-a)/(b-a),0,1);
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+
+/* ---------- renderer / scene ---------- */
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0xe4ddcd);
+const camera=new THREE.PerspectiveCamera(36,1,0.5,800);
+camera.position.set(0,62,52);
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=.08; controls.maxPolarAngle=PI*0.47; controls.minDistance=6; controls.maxDistance=180;
+const ANISO=renderer.capabilities.getMaxAnisotropy();
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x8d8170,1.05));
+const sun=new THREE.DirectionalLight(0xffffff,2.1); sun.position.set(28,70,34);
+sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-70,right:70,top:70,bottom:-70,near:5,far:220});
+sun.shadow.bias=-0.0004; sun.shadow.normalBias=0.03; scene.add(sun);
+const fill=new THREE.DirectionalLight(0xdfe8ff,.55); fill.position.set(-40,30,-20); scene.add(fill);
+
+function ctex(cv,rep){const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=ANISO;if(rep){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep,rep)}return t}
+function std(c,r=.7,m=0,extra={}){return new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:r,metalness:m},extra))}
+
+/* table */
+{const cv=document.createElement('canvas');cv.width=cv.height=1024;const x=cv.getContext('2d');
+ x.fillStyle='#ead9b8';x.fillRect(0,0,1024,1024);
+ for(let i=0;i<260;i++){const y=Math.random()*1024;x.strokeStyle=`rgba(${150+Math.random()*40|0},${110+Math.random()*30|0},70,${.05+Math.random()*.12})`;x.lineWidth=1+Math.random()*3;x.beginPath();x.moveTo(0,y);for(let k=0;k<=8;k++)x.lineTo(k*128,y+Math.sin(k*1.3+i)*6);x.stroke()}
+ const m=new THREE.Mesh(new THREE.PlaneGeometry(600,600),std(0xffffff,.85,0,{map:ctex(cv,6)}));m.rotation.x=-PI/2;m.position.y=-0.08;m.receiveShadow=true;scene.add(m)}
+/* cutting mat 80 x 62 */
+{const W=80,Hh=62,pp=24,cv=document.createElement('canvas');cv.width=W*pp;cv.height=Hh*pp;const x=cv.getContext('2d');
+ x.fillStyle='#1f2a68';x.fillRect(0,0,cv.width,cv.height);
+ for(let i=0;i<=W;i++){x.strokeStyle=i%5?'rgba(255,255,255,.16)':'rgba(255,255,255,.36)';x.lineWidth=i%5?1:2;x.beginPath();x.moveTo(i*pp,0);x.lineTo(i*pp,cv.height);x.stroke()}
+ for(let j=0;j<=Hh;j++){x.strokeStyle=j%5?'rgba(255,255,255,.16)':'rgba(255,255,255,.36)';x.lineWidth=j%5?1:2;x.beginPath();x.moveTo(0,j*pp);x.lineTo(cv.width,j*pp);x.stroke()}
+ x.strokeStyle='rgba(255,255,255,.2)';x.lineWidth=1.5;for(let k=-Hh;k<W;k+=15){x.beginPath();x.moveTo(k*pp,0);x.lineTo((k+Hh)*pp,cv.height);x.stroke();x.beginPath();x.moveTo((k+Hh)*pp,0);x.lineTo(k*pp,cv.height);x.stroke()}
+ x.fillStyle='rgba(255,255,255,.75)';x.font='bold 26px JetBrains Mono, monospace';
+ for(let i=5;i<W;i+=5)x.fillText(i,i*pp-12,30);for(let j=5;j<Hh;j+=5)x.fillText(j,8,j*pp+9);
+ x.font='bold 30px JetBrains Mono, monospace';x.fillText('SELF-HEALING CUTTING MAT · A1',cv.width-640,cv.height-24);
+ const m=new THREE.Mesh(new THREE.BoxGeometry(W,0.12,Hh),[std(0x1a2358),std(0x1a2358),std(0xffffff,.75,0,{map:ctex(cv)}),std(0x1a2358),std(0x1a2358),std(0x1a2358)]);
+ m.position.y=-0.06;m.receiveShadow=true;scene.add(m)}
+
+const root=new THREE.Group(); scene.add(root);
+
+/* ---------- materials ---------- */
+const sheetMats=[];
+function regMat(m){sheetMats.push(m);return m}
+const blackSide=regMat(std(0x141417,.9));
+
+/* ---------- RollSheet: cardboard piece that can be rolled into a spiral tube ---------- */
+class RollSheet{
+  constructor(L,H,r0,opt={}){
+    this.L=L;this.H=H;this.r0=r0;this.th=opt.th||TH;this.name=opt.name||'';
+    this.nu=Math.max(30,Math.ceil(L/0.22));const nu=this.nu,nv=2;
+    const pos=new Float32Array((nu+1)*(nv+1)*3),uv=new Float32Array((nu+1)*(nv+1)*2),idx=[];
+    for(let i=0;i<=nu;i++)for(let j=0;j<=nv;j++){const k=i*(nv+1)+j;uv[k*2]=i/nu;uv[k*2+1]=1-j/nv}
+    for(let i=0;i<nu;i++)for(let j=0;j<nv;j++){const a=i*(nv+1)+j,b=(i+1)*(nv+1)+j,c=a+1,d=b+1;idx.push(a,c,b,b,c,d)}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setIndex(idx);
+    this.geo=g;
+    const ppc=Math.min(26,4000/L);this.ppc=ppc;
+    this.cv=document.createElement('canvas');this.cv.width=Math.ceil(L*ppc);this.cv.height=Math.max(16,Math.ceil(H*ppc));
+    this.tex=ctex(this.cv);
+    const bc=document.createElement('canvas');bc.width=Math.ceil(L*Math.min(14,4000/L));bc.height=8;const bx=bc.getContext('2d');
+    bx.fillStyle='#19191c';bx.fillRect(0,0,bc.width,8);bx.fillStyle='#27272c';const bp=bc.width/L;for(let s=.2;s<L;s+=.45)bx.fillRect(s*bp,0,Math.max(1,.12*bp),8);
+    this.front=new THREE.Mesh(g,regMat(std(0xffffff,.82,0,{map:this.tex,side:THREE.FrontSide})));
+    this.back=new THREE.Mesh(g,regMat(std(0xffffff,.88,0,{map:ctex(bc),side:THREE.BackSide})));
+    for(const m of [this.front,this.back]){m.castShadow=true;m.receiveShadow=true}
+    this.group=new THREE.Group();this.group.add(this.front,this.back);root.add(this.group);
+    this.decorKey=null;this.p=-1;this.setDecor({});this.update(0);
+  }
+  R(s){return Math.sqrt(this.r0*this.r0+this.th*s/PI)}
+  phi(s){return 2*PI*(this.R(s)-this.r0)/this.th}
+  get outer(){return this.R(this.L)}
+  center(p){const l=p*this.L;return {x:l,y:this.R(l)}}
+  update(p){
+    if(Math.abs(p-this.p)<1e-6)return;this.p=p;
+    const L=this.L,H=this.H,nu=this.nu,l=p*L,Rl=this.R(l),pl=this.phi(l),a=this.geo.attributes.position.array;
+    for(let i=0;i<=nu;i++){const s=i/nu*L;let x,y;
+      if(s<l){const Rs=this.R(s),d=pl-this.phi(s);x=l-Rs*Math.sin(d);y=Rl-Rs*Math.cos(d)}else{x=s;y=0}
+      for(let j=0;j<=2;j++){const k=(i*3+j)*3;a[k]=x;a[k+1]=y;a[k+2]=-H/2+j/2*H}}
+    this.geo.attributes.position.needsUpdate=true;this.geo.computeVertexNormals();this.geo.computeBoundingSphere();
+  }
+  setDecor(d){
+    const key=JSON.stringify(d);if(key===this.decorKey)return;this.decorKey=key;
+    const x=this.cv.getContext('2d'),pp=this.ppc,L=this.L,H=this.H;
+    x.setTransform(1,0,0,1,0,0);x.fillStyle='#1d1d21';x.fillRect(0,0,this.cv.width,this.cv.height);
+    x.setTransform(pp,0,0,pp,0,0);
+    x.fillStyle='#2a2a30';for(let s=.2;s<L;s+=.45)x.fillRect(s,0,.13,H);
+    for(const r of d.rects||[]){x.fillStyle=r.fill||'#34343b';x.fillRect(r.s0,r.w0,r.s1-r.s0,r.w1-r.w0);x.strokeStyle='rgba(255,255,255,.25)';x.lineWidth=.06;x.strokeRect(r.s0,r.w0,r.s1-r.s0,r.w1-r.w0);
+      x.fillStyle='#2f2f36';for(let s=r.s0+.2;s<r.s1;s+=.45)x.fillRect(s,r.w0,.12,r.w1-r.w0)}
+    for(const n of d.nums||[]){drawNum(x,n.t,n.s,n.w,n.r||1.1,n.sub,n.rot)}
+    for(const ln of d.lines||[]){if(ln.p<=0)continue;x.strokeStyle=ln.c||'#d0d0d0';x.lineWidth=ln.wd||.09;x.beginPath();x.moveTo(ln.s0,ln.w);x.lineTo(ln.s0+(ln.s1-ln.s0)*ln.p,ln.w);x.stroke()}
+    for(const t of d.tapes||[]){if(t.p<=0)continue;
+      let s0=t.s0,s1=t.s1,w0=t.w0,w1=t.w1;if(t.dir==='w')w1=w0+(w1-w0)*t.p;else s1=s0+(s1-s0)*t.p;
+      x.fillStyle='rgba(215,222,230,.6)';x.fillRect(s0,w0,s1-s0,w1-w0);
+      if(t.liner!==false){const pe=t.peel||0;x.fillStyle='#f6f5ef';if(t.dir==='w')x.fillRect(s0,w0+(w1-w0)*pe,s1-s0,(w1-w0)*(1-pe));else x.fillRect(s0+(s1-s0)*pe,w0,(s1-s0)*(1-pe),w1-w0)}}
+    this.tex.needsUpdate=true;
+  }
+}
+function drawNum(x,t,s,w,r,sub,rot){
+  x.save();if(rot){x.translate(s,w);x.rotate(PI/2);s=0;w=0}x.fillStyle='rgba(122,176,58,.18)';x.strokeStyle='#8bc34a';x.lineWidth=r*.16;x.beginPath();x.arc(s,w,r,0,2*PI);x.fill();x.stroke();
+  x.fillStyle='#f4f4f4';x.font=`900 ${r*1.25}px "Noto Sans KR",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(t,s,w+r*.06);
+  if(sub){x.font=`700 ${r*.62}px "Noto Sans KR",sans-serif`;x.fillStyle='#e6e6e6';x.fillText(sub,s,w+r*1.75)}x.restore();
+}
+
+/* ---------- lenses ---------- */
+const lensMat=new THREE.MeshPhysicalMaterial({color:0x58a8ff,roughness:.06,metalness:0,transparent:true,opacity:.5,clearcoat:1,clearcoatRoughness:.04,side:THREE.DoubleSide,depthWrite:false});
+const rimMat=new THREE.MeshStandardMaterial({color:0x8cc8ff,roughness:.2,transparent:true,opacity:.85});
+function mkLens(R,tc,te){
+  const pts=[],N=20;for(let i=0;i<=N;i++){const r=R*i/N;pts.push(new THREE.Vector2(r,te/2+(tc-te)/2*(1-(r/R)**2)))}
+  for(let i=N;i>=0;i--){const r=R*i/N;pts.push(new THREE.Vector2(r,-(te/2+(tc-te)/2*(1-(r/R)**2))))}
+  const g=new THREE.LatheGeometry(pts,56);g.rotateX(PI/2);
+  const grp=new THREE.Group();const m=new THREE.Mesh(g,lensMat);m.renderOrder=3;grp.add(m);
+  const rg=new THREE.CylinderGeometry(R,R,te,56,1,true);rg.rotateX(PI/2);const rim=new THREE.Mesh(rg,rimMat);rim.renderOrder=3;grp.add(rim);
+  root.add(grp);return grp;
+}
+const lensA=mkLens(1.5,.55,.22),lensB=mkLens(1.5,.55,.22),lensO=mkLens(3.75,1.0,.3);
+
+/* ---------- pieces ---------- */
+const P1=new RollSheet(12,5,1.55,{name:'①'});
+const P2s=new RollSheet(13,11,P1.outer,{name:'②s'});
+const P2l=new RollSheet(16.5,11,P2s.outer,{name:'②l'});
+const P4a=new RollSheet(54.5,4,1),P4b=new RollSheet(54.5,4,1);
+const P4=new RollSheet(109,4,P2l.outer);
+const P5=new RollSheet(35,4,P4.outer);      // 짧은 ⑤ 2장(17.5cm씩) 이은 것
+const P3=new RollSheet(18,1,P2l.outer);     // ③은 접안부(드로튜브)에 바로 감음
+const P6=new RollSheet(25,19,P5.outer);     // ⑥은 고리(④⑤) 위에 말림
+const P8a=new RollSheet(24.5,4.2,1),P8b=new RollSheet(24.5,4.2,1);
+const P7=new RollSheet(30,9,Math.max(3.85,P6.outer+.05));
+const SCY=4.1;                                // 완성된 망원경을 매트에 눕혔을 때 중심 높이
+const ALLSHEETS=[P1,P2s,P2l,P4a,P4b,P4,P5,P3,P6,P8a,P8b,P7];
+
+/* electrical tape ring */
+const ringMat=std(0x1f5fd6,.3,.05,{side:THREE.DoubleSide});   // 절연테이프: 모두 파란색
+const ring=new THREE.Mesh(new THREE.BufferGeometry(),ringMat);ring.castShadow=true;root.add(ring);let ringKey='';
+function setRing(theta,R,cx,cy,z0,z1){const k=theta.toFixed(3)+R;if(k!==ringKey){ringKey=k;ring.geometry.dispose();const g=new THREE.CylinderGeometry(R,R,z1-z0,56,1,true,PI,Math.max(.001,theta));g.rotateX(PI/2);ring.geometry=g}
+  ring.position.set(cx,cy,(z0+z1)/2);ring.visible=theta>0.002}
+
+/* ---------- big sheet (pattern drawing) ---------- */
+const SW=39.4,SH=54.5,SPP=20,SX0=-SW/2,SZ0=-SH/2,STOP=0.33;
+const sheetCv=document.createElement('canvas');sheetCv.width=SW*SPP;sheetCv.height=SH*SPP;const sheetTex=ctex(sheetCv);
+const finalCv=document.createElement('canvas');finalCv.width=SW*SPP;finalCv.height=SH*SPP;const finalTex=ctex(finalCv);
+const sheetBox=new THREE.Mesh(new THREE.BoxGeometry(SW,0.3,SH),[blackSide,blackSide,regMat(std(0xffffff,.82,0,{map:sheetTex})),blackSide,blackSide,blackSide]);
+sheetBox.castShadow=true;sheetBox.receiveShadow=true;root.add(sheetBox);
+const DSEG={
+  2:{dots:[[9,0],[28,0],[32,0],[36,0],[37,0],[9,SH],[28,SH],[32,SH],[36,SH]]},
+  3:{lines:[[9,0,9,SH],[28,0,28,SH],[32,0,32,SH],[36,0,36,SH],[37,0,37,18]]},
+  4:{lines:[[0,30,9,30],[9,25,28,25],[36,18,SW,18]]},
+  5:{lines:[[20,25,20,SH],[9,38,20,38],[20,37,28,37]]},
+  6:{lines:[[25,25,25,37],[24,37,24,SH],[0.6,30,0.6,SH],[4.8,30,4.8,SH]]}
+};
+const CELLS=[
+  {t:'7',x:4.5,y:14,sub:'대물렌즈 셀'},{t:'6',x:18.5,y:12,sub:'경통'},{t:'4',x:30,y:24,sub:'레일'},{t:'4',x:34,y:24,sub:'레일'},
+  {t:'3',x:36.5,y:9,r:.5},{t:'X',x:38.2,y:9},{t:'5',x:37.7,y:36,r:1.2},{t:'2',x:14.5,y:30.5,sub:'드로튜브'},{t:'2',x:14.5,y:45,sub:'드로튜브'},
+  {t:'1',x:22.5,y:30,r:1.3,sub:'접안'},{t:'X',x:26.5,y:31},{t:'5',x:22,y:46,r:1.4},{t:'5',x:26,y:46,r:1.4},{t:'X',x:.3,y:42},{t:'8',x:2.7,y:42,r:1.4},{t:'8',x:6.9,y:42,r:1.4}
+];
+const CUTS=[[9,0,9,SH],[28,0,28,SH],[32,0,32,SH],[36,0,36,SH],[37,0,37,18],[0,30,9,30],[9,25,28,25],[36,18,SW,18],[20,25,20,SH],[9,38,20,38],[20,37,28,37],[25,25,25,37],[24,37,24,SH],[0.6,30,0.6,SH],[4.8,30,4.8,SH]];
+const CUTLEN=CUTS.map(c=>Math.hypot(c[2]-c[0],c[3]-c[1])*(c===CUTS[0]||c===CUTS[1]||c===CUTS[2]||c===CUTS[3]?1:0.5));const CUTTOT=CUTLEN.reduce((a,b)=>a+b,0);
+function itemState(n,prog){const f=prog*n;const i=Math.min(n-1,Math.floor(f));return {i,f:clamp(f-i,0,1)}}
+let sheetKey='';
+function drawSheetTo(cv,stage,prog,final){
+  const x=cv.getContext('2d');x.setTransform(1,0,0,1,0,0);x.fillStyle='#1d1d21';x.fillRect(0,0,cv.width,cv.height);x.setTransform(SPP,0,0,SPP,0,0);
+  x.fillStyle='#29292f';for(let y=.2;y<SH;y+=.45)x.fillRect(0,y,SW,.13);
+  x.lineCap='round';
+  if(stage>=1&&!final){x.fillStyle='#ff6a1f';x.beginPath();x.arc(.55,.55,.5,0,2*PI);x.fill()}
+  for(const k of [2,3,4,5,6]){if(k>stage)break;const cur=(k===stage&&!final),p=cur?prog:1,it=DSEG[k];
+    if(it.dots){const n=it.dots.length;it.dots.forEach((d,i)=>{const f=clamp(p*n-i,0,1);if(f>.6||!cur){x.fillStyle=cur?'#ff6a1f':'#bdbdbd';x.beginPath();x.arc(d[0],d[1]===0?.6:SH-.6,cur?.42:.22,0,2*PI);x.fill()}})}
+    if(it.lines){const n=it.lines.length;it.lines.forEach((l,i)=>{const f=clamp(p*n-i,0,1),e=cur?clamp((f-.15)/.85,0,1):1;if(e<=0)return;
+      x.strokeStyle=cur?'#ff6a1f':'#c9c9c9';x.lineWidth=cur?.2:.08;x.beginPath();x.moveTo(l[0],l[1]);x.lineTo(lerp(l[0],l[2],e),lerp(l[1],l[3],e));x.stroke()})}}
+  if(stage>=7){const n=CELLS.length,p=(stage===7&&!final)?prog:1;CELLS.forEach((c,i)=>{const f=clamp(p*n-i,0,1);if(f<.5)return;
+    if(c.t==='X'){x.strokeStyle='#ff8a5c';x.lineWidth=.14;const r=c.x<1?.25:.9;x.beginPath();x.moveTo(c.x-r,c.y-r);x.lineTo(c.x+r,c.y+r);x.moveTo(c.x+r,c.y-r);x.lineTo(c.x-r,c.y+r);x.stroke()}
+    else drawNum(x,c.t,c.x,c.y,c.r||1.6,c.sub)})}
+  if(stage===8&&!final){let acc=prog*CUTTOT;x.strokeStyle='#2a3a8c';x.lineWidth=.16;
+    for(let i=0;i<CUTS.length&&acc>0;i++){const c=CUTS[i],e=clamp(acc/CUTLEN[i],0,1);acc-=CUTLEN[i];x.beginPath();x.moveTo(c[0],c[1]);x.lineTo(lerp(c[0],c[2],e),lerp(c[1],c[3],e));x.stroke()}}
+}
+function drawSheet(stage,prog){const k=stage+':'+prog.toFixed(3);if(k===sheetKey)return;sheetKey=k;drawSheetTo(sheetCv,stage,prog,false);sheetTex.needsUpdate=true}
+function sp(x,y,h=STOP){return V(SX0+x,h,SZ0+y)}
+/* cut pieces */
+const PIECES=[[0,0,9,30],[9,0,28,25],[28,0,32,SH],[32,0,36,SH],[36,0,37,18],[37,0,SW,18],[36,18,SW,SH],[9,25,20,38],[9,38,20,SH],[20,25,25,37],[25,25,28,37],[20,37,24,SH],[24,37,28,SH],[0,30,.6,SH],[.6,30,4.8,SH],[4.8,30,9,SH]];
+const finalTopMat=regMat(std(0xffffff,.82,0,{map:finalTex}));
+const pieceMeshes=PIECES.map(([x0,y0,x1,y1])=>{const w=x1-x0,h=y1-y0,g=new THREE.BoxGeometry(w,.3,h),mx=(x0+x1)/2,my=(y0+y1)/2,uv=g.attributes.uv,ps=g.attributes.position;
+  for(let v=8;v<12;v++){uv.setXY(v,(mx+ps.getX(v))/SW,1-(my+ps.getZ(v))/SH)}uv.needsUpdate=true;
+  const m=new THREE.Mesh(g,[blackSide,blackSide,finalTopMat,blackSide,blackSide,blackSide]);m.castShadow=m.receiveShadow=true;m.userData={mx,my};root.add(m);return m});
+
+/* ---------- tools ---------- */
+function shadowAll(o){o.traverse(c=>{if(c.isMesh){c.castShadow=true}})}
+function mkPencil(){const g=new THREE.Group(),p=new THREE.Group();g.add(p);
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,13,6),std(0xf2c230,.55));body.position.y=1.8+6.5;
+  const wood=new THREE.Mesh(new THREE.ConeGeometry(.5,1.8,6),std(0xe9c896,.8));wood.rotation.x=PI;wood.position.y=.9;
+  const lead=new THREE.Mesh(new THREE.ConeGeometry(.17,.6,12),std(0x2b2b2b,.5));lead.rotation.x=PI;lead.position.y=.3;
+  const fer=new THREE.Mesh(new THREE.CylinderGeometry(.52,.52,.8,18),std(0xc5c9cc,.3,.8));fer.position.y=15.2;
+  const er=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.9,18),std(0xf08aa0,.7));er.position.y=16;
+  p.add(body,wood,lead,fer,er);p.rotation.set(.38,0,-.42);shadowAll(g);root.add(g);return g}
+function mkKnife(){const g=new THREE.Group(),p=new THREE.Group();g.add(p);
+  const blade=new THREE.Mesh(new THREE.BoxGeometry(1.1,2.8,.06),std(0xdfe3e6,.2,.9));blade.position.y=1.4;
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(.55,1,3),std(0xdfe3e6,.2,.9));tip.rotation.x=PI;tip.scale.z=.1;tip.position.y=.1;
+  const h=new THREE.Mesh(new THREE.BoxGeometry(1.8,10,1.1),std(0xf28a12,.5));h.position.y=2.8+5;
+  const sl=new THREE.Mesh(new THREE.BoxGeometry(.5,1.2,1.25),std(0x333333,.5));sl.position.y=7;
+  p.add(blade,tip,h,sl);p.rotation.set(-.55,0,0);shadowAll(g);root.add(g);return g}
+function mkRuler(){const cv=document.createElement('canvas');cv.width=2000;cv.height=128;const x=cv.getContext('2d');
+  x.fillStyle='#d7dadd';x.fillRect(0,0,2000,128);x.fillStyle='#1b1b1b';
+  for(let mm=0;mm<=500;mm++){const X=mm*4,h=mm%10===0?44:mm%5===0?30:16;x.fillRect(X-1,0,2,h)}
+  x.font='bold 26px JetBrains Mono, monospace';for(let c=0;c<=50;c+=5)x.fillText(c,c*40+4,78);
+  x.font='bold 22px Noto Sans KR';x.fillText('50cm 자',900,116);
+  const top=std(0xffffff,.35,.55,{map:ctex(cv)}),side=std(0xb9bec2,.3,.7);
+  const m=new THREE.Mesh(new THREE.BoxGeometry(50,.22,3.2),[side,side,top,side,side,side]);m.castShadow=true;const g=new THREE.Group();g.add(m);root.add(g);return g}
+function mkRoll(Ro,Ri,W,col,coreCol,rough){const g=new THREE.Group(),p=new THREE.Group();g.add(p);
+  const o=new THREE.Mesh(new THREE.CylinderGeometry(Ro,Ro,W,48,1,true),std(col,rough,0,{side:THREE.DoubleSide}));
+  const c=new THREE.Mesh(new THREE.CylinderGeometry(Ri,Ri,W*1.04,40,1,true),std(coreCol,.8,0,{side:THREE.DoubleSide}));
+  const c2=new THREE.Mesh(new THREE.CylinderGeometry(Ri-.25,Ri-.25,W*1.04,40,1,true),std(coreCol,.8,0,{side:THREE.DoubleSide}));
+  const r1=new THREE.Mesh(new THREE.RingGeometry(Ri,Ro,48),std(col,rough,0,{side:THREE.DoubleSide}));r1.rotation.x=PI/2;r1.position.y=W/2;
+  const r2=r1.clone();r2.position.y=-W/2;
+  const r3=new THREE.Mesh(new THREE.RingGeometry(Ri-.25,Ri,40),std(coreCol,.8,0,{side:THREE.DoubleSide}));r3.rotation.x=PI/2;r3.position.y=W/2+.02;const r4=r3.clone();r4.position.y=-W/2-.02;
+  p.add(o,c,c2,r1,r2,r3,r4);shadowAll(g);root.add(g);g.userData={p,Ro};return g}
+const pencil=mkPencil(),knife=mkKnife(),ruler=mkRuler();
+const tapeRoll=mkRoll(2.4,1.75,1.1,0xf3f2ec,0xb48a5a,.6);
+const eTape=mkRoll(2.2,1.6,1.9,0x1f5fd6,0xc9a77a,.3);
+function mkScissors(){const g=new THREE.Group();const mk=(col)=>{const b=new THREE.Group();
+  const bl=new THREE.Mesh(new THREE.BoxGeometry(7.5,.14,.7),std(0xd9dde0,.2,.9));bl.position.x=3.75;
+  const tp=new THREE.Mesh(new THREE.ConeGeometry(.35,1.2,4),std(0xd9dde0,.2,.9));tp.rotation.z=-PI/2;tp.position.x=8.1;tp.scale.y=1;
+  const h=new THREE.Mesh(new THREE.TorusGeometry(1.15,.32,10,28),std(col,.5));h.rotation.x=PI/2;h.position.x=-1.9;
+  b.add(bl,tp,h);return b};
+  const a=mk(0xe8553a),b=mk(0xe8553a);a.position.y=.1;g.add(a,b);g.userData={a,b};
+  const pin=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.5,16),std(0x777777,.3,.8));g.add(pin);shadowAll(g);root.add(g);return g}
+const scissors=mkScissors();
+function mkGlue(){const g=new THREE.Group(),p=new THREE.Group();g.add(p);
+  const noz=new THREE.Mesh(new THREE.ConeGeometry(.35,1.4,16),std(0xf07a1a,.5));noz.position.y=-.7;
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(1,1.3,1.4,24),std(0xf07a1a,.5));cap.position.y=-2.1;
+  const bot=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.8,7,28),std(0xf7f7f2,.45));bot.position.y=-6.3;
+  const lab=new THREE.Mesh(new THREE.CylinderGeometry(1.75,1.82,3,28,1,true),std(0x2f8f3a,.6));lab.position.y=-6.6;
+  p.add(noz,cap,bot,lab);p.rotation.z=PI*0.82;shadowAll(g);root.add(g);return g}
+const glue=mkGlue();
+/* 감은 부분 옆면(둥근 끝면)에 펴 바른 목공풀: 반투명 흰색 고리 (번들거림) */
+const glueMat=new THREE.MeshPhysicalMaterial({color:0xf3f5f7,roughness:.12,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.6,depthWrite:false,side:THREE.DoubleSide});
+/* 완성 단계(T0=-9) 기준 옆면 3곳: 눈 쪽(⑥+고리) · 접안부 바깥 감은 부분(② 끝면, 렌즈 통 빼고) · ⑦ 뒤쪽 이음매
+   move: 접안부와 함께 앞뒤로 움직임 */
+const GLUE_FACES=[
+  {name:'눈 쪽 옆면',r0:P2l.outer+.3,r1:P6.outer+.09,z:-9-.03},
+  {name:'접안부 바깥 감은 부분',r0:P1.outer+.04,r1:P2l.outer-.02,z:-9-.06,move:true},
+  {name:'이음매 옆면',r0:P6.outer-.06,r1:P7.outer+.09,z:-9+15-.03}];
+GLUE_FACES.forEach(f=>{const m=new THREE.Mesh(new THREE.RingGeometry(f.r0,f.r1,72),glueMat.clone());m.renderOrder=4;root.add(m);f.mesh=m});
+/* 완성 단계 절연테이프 띠 4곳 (폭 1.9cm, 파란색 — 상세 매뉴얼 사진 23처럼): ⑥ 눈 쪽 끝 · ⑥ 이음매 앞 · ⑦ 이음매 뒤 · ⑦ 앞 끝 */
+const bandMat=std(0x1f5fd6,.3,.05,{side:THREE.DoubleSide});
+const TAPE_BANDS=[
+  {name:'경통 눈 쪽 끝',R:P6.outer+.04,z0:-9,z1:-9+1.9},
+  {name:'경통 이음매 앞',R:P6.outer+.04,z0:-9+13.1,z1:-9+15},
+  {name:'대물렌즈 통 이음매 뒤',R:P7.outer+.04,z0:-9+15,z1:-9+16.9},
+  {name:'대물렌즈 통 앞 끝',R:P7.outer+.04,z0:-9+22.1,z1:-9+24}];
+TAPE_BANDS.forEach(b=>{b.mesh=new THREE.Mesh(new THREE.BufferGeometry(),bandMat);b.mesh.castShadow=true;b.key='';root.add(b.mesh)});
+function setBand(b,theta,cy){const k=theta.toFixed(3);if(k!==b.key){b.key=k;b.mesh.geometry.dispose();const g=new THREE.CylinderGeometry(b.R,b.R,b.z1-b.z0,64,1,true,PI,Math.max(.001,theta));g.rotateX(PI/2);b.mesh.geometry=g}
+  b.mesh.position.set(0,cy,(b.z0+b.z1)/2);b.mesh.visible=theta>.002}
+const glueDots=[];for(let i=0;i<22;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.28,12,8),std(0xfafaf5,.25));m.scale.y=.6;root.add(m);glueDots.push(m)}
+/* 양면테이프 비닐(이형지) 벗기기 효과: 벗겨지는 비닐 띠가 뒤로 젖혀지며 들려 올라감 */
+const linerMat=std(0xf6f5ef,.6,0,{side:THREE.DoubleSide});
+const linerPool=[];let linerN=0;
+function mkLiner(){const g=new THREE.Group(),inner=new THREE.Group(),m=new THREE.Mesh(new THREE.PlaneGeometry(1,1),linerMat);
+  m.rotation.x=-PI/2;m.position.x=-.5;m.castShadow=true;inner.add(m);g.add(inner);g.userData.inner=inner;root.add(g);return g}
+/* rs: 평평하게 놓인 종이, tp: 테이프 {s0,s1,w0,w1,dir}, pe: 벗긴 정도 0~1. 말풍선 위치를 돌려줌 */
+function peelFx(rs,tp,pe){if(pe<=0||pe>=1)return null;
+  const g=linerPool[linerN]||(linerPool[linerN]=mkLiner());linerN++;
+  const dW=tp.dir==='w',len=dW?tp.w1-tp.w0:tp.s1-tp.s0,wid=dW?tp.s1-tp.s0:tp.w1-tp.w0,Lp=Math.max(.4,Math.min(len*pe,6)),gp=rs.group.position;
+  const fx=dW?gp.x+(tp.s0+tp.s1)/2:gp.x+tp.s0+len*pe,fz=dW?gp.z-rs.H/2+tp.w0+len*pe:gp.z-rs.H/2+(tp.w0+tp.w1)/2;
+  g.visible=true;g.position.set(fx,gp.y+.04,fz);g.rotation.set(0,dW?-PI/2:0,0);
+  const inn=g.userData.inner;inn.rotation.set(0,0,-.55+.25*Math.sin(pe*PI*6));inn.scale.set(Lp,1,wid*.98);
+  return V(fx-(dW?0:Lp*.8),gp.y+Lp*.5+.8,fz-(dW?Lp*.8:0))}
+/* 비닐 벗기면서 말풍선 달기 */
+function peelL(rs,tp,pe){const p=peelFx(rs,tp,pe);if(p)L('비닐 벗기기',p.x,p.y,p.z,'warn big')}
+const joinTape=new THREE.Mesh(new THREE.BoxGeometry(3,.03,4.6),std(0xe6ecf2,.3,0,{transparent:true,opacity:.75}));root.add(joinTape);
+
+const eTapeB=mkRoll(2.2,1.6,1.9,0x1f5fd6,0xc9a77a,.3);   // 파란 절연테이프 (완성 단계)
+const TOOLS={pencil,knife,ruler,tapeRoll,eTape,eTapeB,scissors,glue};
+function rollAxis(g,axis,centered){g.rotation.set(0,0,0);const p=g.userData.p;p.rotation.set(0,0,0);
+  if(axis==='z')p.rotation.x=PI/2;else p.rotation.z=PI/2;p.position.y=centered?0:g.userData.Ro}
+
+/* ---------- placement helpers ---------- */
+function flat(rs,x,z,y=0.03){rs.update(0);rs.group.position.set(x,y,z);rs.group.rotation.set(0,0,0);rs.group.visible=true}
+function tube(rs,p,cx,cy,cz){rs.update(p);const C=rs.center(p);rs.group.position.set(cx-C.x,cy-C.y,cz);rs.group.rotation.set(0,0,0);rs.group.visible=true}
+function rollMat(rs,p,cx,cz){rs.update(p);const C=rs.center(p);rs.group.position.set(cx-C.x,0.03,cz);rs.group.rotation.set(0,0,0);rs.group.visible=true;return C.y+0.03}
+function lensTube(cx,cy,z){tube(P1,1,cx,cy,z);lensA.visible=lensB.visible=true;lensA.position.set(cx,cy,z-1.5);lensB.position.set(cx,cy,z+.5);setRing(2*PI,P1.outer+.04,cx,cy,z-2.5,z-.6)}
+/* 접안부: 드로튜브(②) 중심 ez, 길이 11 (ez-5.5 ~ ez+5.5).
+   렌즈 통은 절연테이프 감은 부분(1.9cm)만큼 눈 쪽으로 튀어나옴 → 렌즈 통 ez-7.4 ~ ez-2.4
+   고리(④⑤)는 눈 쪽 끝(ez-5.5 ~ ez-1.5), ③은 반대쪽 맨 끝(ez+4.5 ~ ez+5.5) — 상세 매뉴얼 사진 16·18 */
+function placeE(cx,cy,ez,o={}){lensTube(cx,cy,ez-4.9);if(o.d1!==false)tube(P2s,1,cx,cy,ez);if(o.d2!==false)tube(P2l,1,cx,cy,ez);
+  const rz=o.rz!==undefined?o.rz:ez-3.5;
+  if(o.c4)tube(P4,1,cx,cy,rz);if(o.c5)tube(P5,1,cx,cy,rz);if(o.c3)tube(P3,1,cx,cy,ez+5)}
+/* 완성품: ⑥ 경통 T0 ~ T0+19, 고리는 ⑥의 눈 쪽 가장자리에 고정(T0 ~ T0+4).
+   f = 접안부를 눈 쪽으로 당겨 낸 거리 (0 ~ 6cm, ③이 고리에 걸릴 때까지) */
+function placeScope(cx,cy,T0,f,cell=true){placeE(cx,cy,T0+5.5-f,{c4:1,c5:1,c3:1,rz:T0+2});tube(P6,1,cx,cy,T0+9.5);
+  if(cell){tube(P7,1,cx,cy,T0+19.5);lensO.visible=true;lensO.position.set(cx,cy,T0+19.5)}}
+const TAPE_PEELED=(o)=>Object.assign({liner:false},o);
+const D7={rects:[{s0:0,s1:24.5,w0:0,w1:4.2},{s0:0,s1:24.5,w0:4.8,w1:9}],nums:[{t:'7',s:27,w:4.5,r:1.1,rot:1}]};
+
+function hideAll(){for(const r of ALLSHEETS)r.group.visible=false;for(const k in TOOLS)TOOLS[k].visible=false;
+  lensA.visible=lensB.visible=lensO.visible=false;ring.visible=false;sheetBox.visible=false;pieceMeshes.forEach(m=>m.visible=false);
+  glueDots.forEach(m=>m.visible=false);GLUE_FACES.forEach(f=>f.mesh.visible=false);TAPE_BANDS.forEach(b=>b.mesh.visible=false);glueDots.forEach(m=>m.scale.set(1,.6,1));linerPool.forEach(g=>g.visible=false);linerN=0;joinTape.visible=false}
+function show(o,x,y,z){o.visible=true;o.position.set(x,y,z);return o}
+
+/* ---------- pattern-drawing step helpers ---------- */
+function rulerFor(l){ // l=[x0,y0,x1,y1] sheet coords
+  ruler.visible=true;ruler.rotation.set(0,0,0);
+  if(l[0]===l[2]){ruler.rotation.y=PI/2;ruler.position.copy(sp(l[0]+1.7,SH/2,STOP+.12))}
+  else{ruler.position.copy(sp(SW/2,l[1]-1.7,STOP+.12));if(l[1]<2)ruler.position.copy(sp(SW/2,l[1]+1.8,STOP+.12))}}
+function drawStep(k,t){
+  const it=DSEG[k];drawSheet(k,t);
+  if(it.dots){const n=it.dots.length,{i,f}=itemState(n,t),d=it.dots[i],pv=it.dots[Math.max(0,i-1)],e=ease(clamp(f/.6,0,1));
+    const top=d[1]===0;ruler.visible=true;ruler.rotation.set(0,0,0);ruler.position.copy(sp(SW/2,top?2.4:SH-2.4,STOP+.12));
+    const yy=(v)=>v===0?.6:SH-.6;const p=sp(lerp(pv[0],d[0],e),lerp(yy(pv[1]),yy(d[1]),e),STOP+(f<.6?Math.sin(e*PI)*1.2:0));show(pencil,p.x,p.y,p.z)}
+  else{const n=it.lines.length,{i,f}=itemState(n,t),l=it.lines[i],pv=it.lines[Math.max(0,i-1)];rulerFor(l);
+    let p;if(f<.15&&i>0){const e=ease(f/.15);p=sp(lerp(pv[2],l[0],e),lerp(pv[3],l[1],e),STOP+Math.sin(e*PI)*2)}
+    else{const e=clamp((f-.15)/.85,0,1);p=sp(lerp(l[0],l[2],e),lerp(l[1],l[3],e))}show(pencil,p.x,p.y,p.z)}
+}
+
+/* ---------- steps ---------- */
+const GROUPS=[{id:'D',name:'도안 그리기',mode:'도안'},{id:'A',name:'A 접안부',mode:'A'},{id:'B',name:'B 고리 감기',mode:'B'},{id:'C',name:'C 경통·대물렌즈',mode:'C'}];
+const TCOL={'검정 골판지':'#1d1d21','연필':'#f2c230','50cm 자':'#cfd3d6','칼':'#f28a12','가위':'#e8553a','양면테이프':'#f6f5ef','절연테이프':'#1f5fd6','목공풀':'#2f8f3a','접안렌즈 3cm':'#58a8ff','대물렌즈 7.5cm':'#58a8ff','테이프':'#e6ecf2'};
+let LBL=[];const L=(t,x,y,z,c='')=>LBL.push({t,v:V(x,y,z),c});
+const SAMEPOS={p:[0,64,50],t:[0,0,2]};
+
+const STEPS=[
+ {g:'D',short:'골판지 놓기',title:'골판지 놓기',fig:'검정 4절 골판지 (약 39 × 54cm) · 단위 cm',
+  body:'<b>매끈한 면</b>이 위로, 골(줄무늬)이 <b>가로</b>가 되게 세로로 길게 놓아요. <b>왼쪽 위 모서리</b>가 기준(0)이에요.',
+  warn:'도안의 숫자는 모두 cm, 모든 거리는 왼쪽 위 모서리에서 재요.',tools:['검정 골판지'],dur:3.5,rot:0,cam:{p:[6,66,54],t:[0,0,2]},
+  apply(t){const e=ease(seg(t,0,.7));sheetBox.visible=true;sheetBox.position.set(0,.18+(1-e)*14,0);sheetBox.rotation.set(0,(1-e)*.7,0);drawSheet(1,0);
+    if(t>.7){L('기준 0',SX0+.5,.5,SZ0+.5,'warn big');L('골 줄무늬 = 가로',0,.4,0,'big');L('매끈한 면이 위로',8,.4,14);L('세로로 길게',SX0+SW+.5,.4,4)}}},
+ {g:'D',short:'점 찍기',title:'위·아래에 점 찍기',fig:'왼쪽 위 모서리에서 잰 거리 · 단위 cm',
+  body:'왼쪽 모서리부터 재어 위에는 <b>9 · 28 · 32 · 36 · 37cm</b>, 아래에는 <b>9 · 28 · 32 · 36cm</b>에 점을 찍어요.',
+  tools:['50cm 자','연필'],dur:9,rot:0,cam:SAMEPOS,
+  apply(t){sheetBox.visible=true;sheetBox.position.set(0,.18,0);sheetBox.rotation.set(0,0,0);drawStep(2,t);
+    const n=9,{i}=itemState(n,t);const d=DSEG[2].dots[i];L(d[0]+'cm',SX0+d[0],STOP+.2,d[1]===0?SZ0+.6:SZ0+SH-.6,'warn big');L('기준 0',SX0+.5,.4,SZ0+.5)}},
+ {g:'D',short:'긴 세로선',title:'긴 세로선 긋기',fig:'위·아래 같은 숫자 점을 자로 잇기',
+  body:'위·아래 <b>같은 숫자 점</b>을 자로 이어요. <b>37cm 선은 위에서 18cm까지만!</b>',
+  warn:'선은 연하게 긋고, 자는 손바닥으로 단단히 눌러 미끄러지지 않게 해요.',tools:['50cm 자','연필'],dur:9,rot:0,cam:SAMEPOS,
+  apply(t){sheetBox.visible=true;sheetBox.position.set(0,.18,0);sheetBox.rotation.set(0,0,0);drawStep(3,t);
+    const {i}=itemState(5,t),l=DSEG[3].lines[i];L(l[0]+'cm 선',SX0+l[0],STOP+.2,SZ0+2,'warn big');if(i===4)L('18cm까지만!',SX0+37,STOP+.2,SZ0+18,'bad')}},
+ {g:'D',short:'가로선 3개',title:'가로선 3개',fig:'위에서부터 잰 거리 · 단위 cm',
+  body:'위에서부터 재어 0~9cm 칸은 <b>30cm</b>, 9~28cm 칸은 <b>25cm</b>, 36cm~끝 칸은 <b>18cm</b>에 가로선을 그어요.',
+  tools:['50cm 자','연필'],dur:6.5,rot:0,cam:SAMEPOS,
+  apply(t){sheetBox.visible=true;sheetBox.position.set(0,.18,0);sheetBox.rotation.set(0,0,0);drawStep(4,t);
+    const {i}=itemState(3,t),l=DSEG[4].lines[i];L('위에서 '+l[1]+'cm',SX0+(l[0]+l[2])/2,STOP+.2,SZ0+l[1],'warn big')}},
+ {g:'D',short:'가운데 칸',title:'가운데 칸 나누기',fig:'25cm 선 아래 칸 나누기',
+  body:'25cm 선 아래, 왼쪽에서 <b>20cm</b>에 세로선을 맨 아래까지. 그 왼쪽은 <b>38cm</b>, 오른쪽은 <b>37cm</b> 높이에 가로선.',
+  tools:['50cm 자','연필'],dur:6.5,rot:0,cam:SAMEPOS,
+  apply(t){sheetBox.visible=true;sheetBox.position.set(0,.18,0);sheetBox.rotation.set(0,0,0);drawStep(5,t);
+    const {i}=itemState(3,t),txt=['왼쪽에서 20cm','38cm 높이','37cm 높이'][i],l=DSEG[5].lines[i];L(txt,SX0+(l[0]+l[2])/2,STOP+.2,SZ0+(l[1]+l[3])/2,'warn big')}},
+ {g:'D',short:'작은 칸',title:'작은 칸 나누기',fig:'세로선 4개 더',
+  body:'왼쪽에서 <b>25cm</b>(37cm 선 위), <b>24cm</b>(37cm 선 아래)에 세로선. 30cm 선 아래는 <b>0.6cm, 4.8cm</b>에 세로선.',
+  tools:['50cm 자','연필'],dur:8,rot:0,cam:SAMEPOS,
+  apply(t){sheetBox.visible=true;sheetBox.position.set(0,.18,0);sheetBox.rotation.set(0,0,0);drawStep(6,t);
+    const {i}=itemState(4,t),l=DSEG[6].lines[i];L(['25cm','24cm','0.6cm','4.8cm'][i],SX0+l[0],STOP+.2,SZ0+(l[1]+l[3])/2,'warn big')}},
+ {g:'D',short:'번호 쓰기',title:'번호 쓰고 확인',fig:'3쪽 도안과 비교하기',
+  body:'칸마다 <b>①~⑧ 번호</b>를 쓰고 여분 칸에는 <b>X</b>. 3쪽 도안과 같은지 짝과 확인해요.',
+  tools:['연필'],dur:8,rot:0,cam:{p:[0,58,44],t:[0,0,2]},
+  apply(t){sheetBox.visible=true;sheetBox.position.set(0,.18,0);sheetBox.rotation.set(0,0,0);drawSheet(7,t);
+    const n=CELLS.length,{i,f}=itemState(n,t),c=CELLS[i],pc=CELLS[Math.max(0,i-1)],e=ease(clamp(f/.5,0,1));
+    const p=sp(lerp(pc.x,c.x,e),lerp(pc.y,c.y,e),STOP+(f<.5?Math.sin(e*PI)*1.5:0));show(pencil,p.x+.3,p.y,p.z+.3);
+    if(t>.98){L('여분 X',SX0+38.2,STOP,SZ0+9,'bad');L('여분 X',SX0+26.5,STOP,SZ0+31,'bad')}}},
+ {g:'D',short:'자르기',title:'자르기',fig:'칼 · 50cm 자 · 긴 세로선부터',
+  body:'자를 대고 칼로 <b>2~3번 나누어</b> 그어요. <b>긴 세로선부터</b> 자르면 쉬워요.',
+  warn:'칼질은 자 바깥쪽에서, 몸 반대 방향으로! 오른쪽·아래 끝에 남는 부분은 여분이에요.',tools:['칼','50cm 자'],dur:10,rot:0,cam:{p:[4,66,54],t:[0,0,2]},
+  apply(t){const kp=seg(t,0,.74);
+    if(t<.76){sheetBox.visible=true;sheetBox.position.set(0,.18,0);sheetBox.rotation.set(0,0,0);drawSheet(8,kp);
+      let acc=kp*CUTTOT,i=0;for(;i<CUTS.length-1;i++){if(acc<=CUTLEN[i])break;acc-=CUTLEN[i]}const c=CUTS[i],e=clamp(acc/CUTLEN[i],0,1);
+      rulerFor(c);const p=sp(lerp(c[0],c[2],e),lerp(c[1],c[3],e));show(knife,p.x,p.y,p.z);
+      knife.rotation.set(0,c[0]===c[2]?0:-PI/2,0);
+      if(i<4)L('긴 세로선부터',p.x,p.y+.2,p.z,'warn big');L('몸 반대 방향으로',p.x+7,p.y,p.z-6,'bad')}
+    else{const e=ease(seg(t,.76,1));pieceMeshes.forEach(m=>{const {mx,my}=m.userData;m.visible=true;m.position.set(SX0+mx+(mx-SW/2)*.16*e,.18+Math.sin(e*PI)*1.5,SZ0+my+(my-SH/2)*.12*e)});
+      if(t>.95){L('① 접안렌즈 판',SX0+22.5+.4,.4,SZ0+31+1.5);L('⑥ 경통',SX0+18.5-1,.4,SZ0+12.5-3);L('⑦ 대물렌즈 셀',SX0+4.5-2.5,.4,SZ0+15-4);L('② 드로튜브',SX0+14.5-1,.4,SZ0+31+.5)}}}},
+
+ {g:'A',short:'선·테이프',title:'선 긋고 양면테이프',fig:'① 접안렌즈 판 5 × 12cm',
+  body:'①번 종이의 긴 가장자리에서 각각 <b>2cm</b>, <b>1cm</b> 떨어진 곳에 선을 긋고, 선 위에 <b>양면테이프</b>를 붙여요.',
+  tools:['연필','50cm 자','양면테이프'],dur:7,rot:PI/2,cam:{p:[-16,15,5],t:[0,0,0]},
+  apply(t){flat(P1,-6,0);const l1=ease(seg(t,.05,.24)),l2=ease(seg(t,.27,.46)),t1=seg(t,.52,.74),t2=seg(t,.77,.98);
+    P1.setDecor({nums:[{t:'1',s:6,w:2,r:.7,rot:1}],lines:[{s0:0,s1:12,w:1,p:l1},{s0:0,s1:12,w:3,p:l2}],tapes:[{s0:0,s1:12,w0:.55,w1:1.45,p:t1},{s0:0,s1:12,w0:2.55,w1:3.45,p:t2}]});
+    if(t<.5){const w=t<.26?1:3,f=t<.26?l1:l2;show(pencil,-6+12*f,.05,w-2.5);ruler.visible=true;ruler.rotation.set(0,0,0);ruler.position.set(0,.14,w-2.5-1.7);}
+    else{const w=t<.76?1:3,f=t<.76?t1:t2;rollAxis(tapeRoll,'z');show(tapeRoll,-6+12*f,.05,w-2.5)}
+    L('1cm',-7,.1,-1.5,'warn big');L('2cm',-7,.1,.8,'warn big');L('① 5 × 12cm',-1,.1,2.6);if(t>.5)L('양면테이프',-6+12*(t<.76?t1:t2),2.4,(t<.76?1:3)-2.5)}},
+ {g:'A',short:'렌즈 세우기',title:'렌즈를 세워서 붙이기',fig:'접안렌즈 3cm × 2개',
+  body:'테이프 <b>비닐을 벗기고</b>, 선을 따라 접안렌즈(3cm) <b>2개를 세워서</b> 붙여요.',
+  warn:'렌즈는 가장자리만 잡아요. 손자국이 남으면 흐리게 보여요.',tools:['접안렌즈 3cm','양면테이프'],dur:6,rot:PI/2,cam:{p:[-15,11,7],t:[-3,1.2,-.5]},
+  apply(t){flat(P1,-6,0);const p1=seg(t,.04,.27),p2=seg(t,.3,.53);
+    P1.setDecor({nums:[{t:'1',s:6,w:2,r:.7,rot:1}],lines:[{s0:0,s1:12,w:1,p:1},{s0:0,s1:12,w:3,p:1}],tapes:[{s0:0,s1:12,w0:.55,w1:1.45,p:1,peel:p1},{s0:0,s1:12,w0:2.55,w1:3.45,p:1,peel:p2}]});
+    peelFx(P1,{s0:0,s1:12,w0:.55,w1:1.45},p1);peelFx(P1,{s0:0,s1:12,w0:2.55,w1:3.45},p2);
+    const d1=ease(seg(t,.58,.8)),d2=ease(seg(t,.72,.95));lensA.visible=lensB.visible=true;lensA.position.set(-6,1.55+(1-d1)*9,-1.5);lensB.position.set(-6,1.55+(1-d2)*9,.5);
+    if(t<.56)L('비닐 벗기기',-6+12*(t<.29?p1:p2),1.5,(t<.29?1:3)-2.5,'warn big');else{L('렌즈를 세워서',-6,3.3,-1.5,'big');L('가장자리만 잡기',-6,3.2,1.8,'warn')}}},
+ {g:'A',short:'돌돌 말기',title:'그대로 돌돌 말기',fig:'① → 렌즈 통',
+  body:'그대로 돌돌 말아요. <b>두 렌즈가 계속 나란하도록</b> 주의!',tools:[],dur:6,rot:PI/2,cam:{p:[-15,12,8],t:[-2,1.2,0]},
+  apply(t){const p=ease(seg(t,.08,.95));P1.setDecor({lines:[{s0:0,s1:12,w:1,p:1},{s0:0,s1:12,w:3,p:1}],tapes:[{s0:0,s1:12,w0:.55,w1:1.45,p:1,liner:false},{s0:0,s1:12,w0:2.55,w1:3.45,p:1,liner:false}]});
+    const cy=rollMat(P1,p,-6,0);lensA.visible=lensB.visible=true;lensA.position.set(-6,cy,-1.5);lensB.position.set(-6,cy,.5);
+    if(p<.85)L('이쪽으로 말기 →',-6+(1-p)*6+1,.3,0,'warn big');L('두 렌즈 나란히!',-6,cy+2,-.5,'big')}},
+ {g:'A',short:'절연테이프',title:'절연테이프로 표시',fig:'렌즈 통 · 절연테이프 한 바퀴',
+  body:'렌즈가 가까운 <b>1cm 쪽</b>에 절연테이프를 <b>한 바퀴</b> 감아 표시해요.',tools:['절연테이프'],dur:5,rot:PI/2,cam:{p:[-11,8,-8],t:[0,1.5,-1]},
+  apply(t){P1.setDecor({});const cy=P1.outer+.03;tube(P1,1,0,cy,0);lensA.visible=lensB.visible=true;lensA.position.set(0,cy,-1.5);lensB.position.set(0,cy,.5);
+    const th=ease(seg(t,.12,.9))*2*PI;setRing(th,P1.outer+.04,0,cy,-2.5,-.6);
+    const R=P1.outer+2.2,a=PI+th;rollAxis(eTape,'z',true);show(eTape,Math.sin(a)*R,cy+Math.cos(a)*R,-1.55);
+    L('절연테이프 한 바퀴',0,cy+P1.outer+.2,-1.55,'warn big');L('1cm 쪽',0,.1,-3.4);L('렌즈 통',0,cy+P1.outer,1.5)}},
+ {g:'A',short:'짧은 ②',title:'짧은 ②번 말기',fig:'② 드로튜브 (짧은 것) · 렌즈 통',
+  body:'짧은 ②번을 <b>뒤집어</b> 렌즈 통을 가장자리에 놓아요. <b>절연테이프 감은 부분은 종이 밖으로!</b> 끝에 <b>양면테이프</b>를 붙여 말고, <b>위·아래 지름이 같게!</b>',
+  tools:['양면테이프'],dur:9.5,rot:PI/2,cam:{p:[-21,17,8],t:[-1,1,-1.5]},
+  apply(t){const cx=-6.5,fl=ease(seg(t,0,.22)),tp=seg(t,.38,.5),pe=seg(t,.52,.64),p=ease(seg(t,.66,.98));
+    const T1={s0:11.9,s1:12.7,w0:.3,w1:10.7,dir:'w'};
+    P2s.setDecor({nums:[{t:'2',s:6.5,w:5.5,r:1.2,rot:1}],tapes:[Object.assign({p:tp,peel:pe},T1)]});peelL(P2s,T1,pe);
+    let cy;if(t<.22){flat(P2s,cx,0);P2s.group.rotation.x=PI*(1-fl);P2s.group.position.y=.03+Math.sin(fl*PI)*5;cy=P2s.r0+.03}else cy=rollMat(P2s,p,cx,0);
+    const d=ease(seg(t,.22,.36));if(t>.2)lensTube(cx,cy+(1-d)*8,-4.9);
+    if(tp>0&&tp<1){rollAxis(tapeRoll,'x');show(tapeRoll,cx+12.3,.05,-5.2+10.4*tp)}
+    L('짧은 ②',cx+(1-p)*9+1,.3,5.8);if(t>.3)L('렌즈 통',cx,cy+2,-4,'big');if(t>.36&&t<.9)L('절연테이프 부분은 밖으로',cx,cy+1.6,-7,'warn');if(t<.22)L('뒤집기',cx+6,4,0,'warn big');if(tp>0&&tp<1)L('끝에 양면테이프',cx+12.3,5,0,'warn');if(t>.9)L('위·아래 지름이 같게!',cx,cy+2.4,4.5,'warn big')}},
+ {g:'A',short:'긴 ②',title:'긴 ②번 말기',fig:'② 드로튜브 (긴 것) · 접안부 완성',
+  body:'이어서 긴 ②번을 양면테이프로 붙여 말고, <b>끝도 양면테이프로 마감</b>해요. <b>골판지 방향 확인!</b>',
+  warn:'골(줄무늬)이 통의 길이 방향과 나란해야 잘 말려요.',tools:['양면테이프'],dur:10,rot:PI/2,cam:{p:[-23,18,9],t:[-1,1,-.5]},
+  apply(t){const cx=-8,t1=seg(t,0,.1),t2=seg(t,.11,.21),e1=seg(t,.22,.31),d=ease(seg(t,.32,.42)),e2=seg(t,.8,.88),p=.9*ease(seg(t,.44,.79))+.1*ease(seg(t,.89,.98));
+    const A1={s0:.2,s1:1,w0:.3,w1:10.7,dir:'w'},A2={s0:15.4,s1:16.2,w0:.3,w1:10.7,dir:'w'};
+    P2l.setDecor({nums:[{t:'2',s:8,w:5.5,r:1.2,rot:1}],tapes:[Object.assign({p:t1,peel:e1},A1),Object.assign({p:t2,peel:e2},A2)]});
+    P2s.setDecor({});const cy=rollMat(P2l,p,cx,0);peelL(P2l,A1,e1);peelL(P2l,A2,e2);
+    if(t<.21){rollAxis(tapeRoll,'x');show(tapeRoll,cx+(t<.105?.6:15.8),.05,-5.2+10.4*(t<.105?t1:t2))}
+    placeE(cx,cy+(1-d)*8,0,{d2:false});
+    L('긴 ②',cx+(1-p)*11+1,.3,5.8);L('골 방향 = 통 방향',cx+(1-p)*9+3,.3,-2,'warn');if(t>.95){L('접안부 완성!',cx,cy+2.6,0,'good big')}}},
+
+ {g:'B',short:'④+④ 잇기',title:'④ + ④ 잇기',fig:'④ 드로튜브 레일 4 × 54.5cm · 2장',
+  body:'④·⑤번을 자르고, <b>④번 2장을 테이프로 이어</b> 길게 만들어요.',tools:['테이프'],dur:5,rot:0,cam:{p:[2,62,52],t:[0,0,2]},
+  apply(t){const j=ease(seg(t,0,.35));P4a.setDecor({nums:[{t:'4',s:44,w:2,r:1.3}]});P4b.setDecor({nums:[{t:'4',s:10,w:2,r:1.3}]});
+    flat(P4a,-54.5-5*(1-j),0);flat(P4b,5*(1-j),0);
+    const d=ease(seg(t,.4,.58));joinTape.visible=true;joinTape.position.set(0,.08+(1-d)*7,0);
+    placeE(-24,P2l.outer+.03,14);L('④',-10,.3,-2.5,'big');L('④',10,.3,-2.5,'big');if(t>.4)L('테이프로 잇기',0,.6,2.6,'warn big');L('접안부',-24,4.5,14)}},
+ {g:'B',short:'④ 감기',title:'④ 감기',fig:'접안부 + ④ (이은 것)',
+  body:'접안부의 <b>눈 쪽 끝</b>(렌즈 통이 나온 쪽)에 ④번을 돌돌 감고 <b>끝을 양면테이프로 고정</b>. <b>접안부와 붙지 않아야 정상!</b>',
+  warn:'④번을 접안부에 붙이면 안 돼요. 나중에 이 고리 안에서 접안부가 미끄러져야 초점을 맞출 수 있어요.',tools:['양면테이프'],dur:9,rot:0,cam:{p:[-3,19,22],t:[-21,2.5,-1]},
+  apply(t,time){const cx=-25,tp=seg(t,.74,.82),pe=seg(t,.83,.92),p=.97*ease(seg(t,.04,.72))+.03*seg(t,.93,1);
+    const E={s0:107.6,s1:108.8,w0:.2,w1:3.8,dir:'w'};
+    P4.setDecor({tapes:[Object.assign({p:tp,peel:pe},E),{s0:53,s1:56,w0:0,w1:4,p:1,liner:false}]});
+    const cy=rollMat(P4,p,cx,-3.5);const sl=t>=1?.7*Math.sin(time*2.2):0;placeE(cx,cy,sl);peelL(P4,E,pe);
+    if(tp>0&&tp<1){rollAxis(tapeRoll,'z');show(tapeRoll,P4.group.position.x+108.2,.05,-5.3+3.6*tp)}
+    L('④ 감기',cx+8,.3,-3.5,'big');L('눈 쪽 끝에 맞춰',cx,cy+P4.R(p*109)+.3,-5.5,'warn');L('접안부엔 붙이지 않기',cx,cy+2.4,2.5,'bad big');if(t>=1)L('미끄러지면 정상',cx,cy,6.5,'good')}},
+ {g:'B',short:'⑤ 잇기',title:'⑤ 이어 붙이기',fig:'짧은 ⑤ 드로튜브 레일 2장 이어서',
+  body:'짧은 ⑤번 2장도 이어 붙여 ④번 뒤에 <b>계속 감아요</b>. 목도리 같은 고리가 점점 <b>두꺼워져요</b>.',tools:['테이프','양면테이프'],dur:8,rot:0,cam:{p:[-4,19,21],t:[-21,3,-1]},
+  apply(t){const cx=-25,tp=seg(t,.74,.82),pe=seg(t,.83,.92),p=.95*ease(seg(t,.04,.72))+.05*seg(t,.93,1);
+    const E={s0:33.8,s1:34.8,w0:.2,w1:3.8,dir:'w'};
+    P5.setDecor({nums:[{t:'5',s:8.75,w:2,r:1.3},{t:'5',s:26.25,w:2,r:1.3}],tapes:[{s0:16,s1:19,w0:0,w1:4,p:1,liner:false},Object.assign({p:tp,peel:pe},E)]});
+    const cy=rollMat(P5,p,cx,-3.5);tube(P4,1,cx,cy,-3.5);placeE(cx,cy,0);peelL(P5,E,pe);
+    if(tp>0&&tp<1){rollAxis(tapeRoll,'z');show(tapeRoll,P5.group.position.x+34.25,.05,-5.3+3.6*tp)}
+    L('⑤ 이어 붙이기',cx+12,.3,-3.5,'big');if(P5.group.position.x+17.5>cx+3)L('이음매',P5.group.position.x+17.5,.4,-1.2);L('고리가 두꺼워져요',cx,cy+P5.R(p*35)+.3,-3.5,'warn big')}},
+ {g:'B',short:'③ 단단히',title:'③ 단단히 감기',fig:'③ 드로튜브 고정 띠 1 × 18cm',
+  body:'③번을 접안부 <b>맨 아래쪽</b>(고리 반대쪽 끝)에 감아요. ③번 <b>전체에 양면테이프</b>를 붙여 접안부에 단단히 고정!',
+  warn:'③번은 접안부가 고리에서 빠지지 않게 막아 주는 멈춤 턱이에요.',tools:['양면테이프','가위'],dur:8.5,rot:0,cam:{p:[-4,13,13],t:[-24,3,-.5]},
+  apply(t){const cx=-25,tp=seg(t,.02,.26),pe=seg(t,.28,.44),lift=ease(seg(t,.45,.5)),p=ease(seg(t,.5,.96));
+    const E={s0:0,s1:18,w0:.12,w1:.88};
+    P3.setDecor({tapes:[Object.assign({p:tp,peel:pe},E)]});
+    const cy=P5.outer+.03;tube(P3,p,cx,cy,5);if(p===0)P3.group.position.y=lerp(.03,cy-P3.r0,lift);peelL(P3,E,pe);
+    tube(P5,1,cx,cy,-3.5);tube(P4,1,cx,cy,-3.5);placeE(cx,cy,0);
+    if(tp>0&&tp<1){rollAxis(tapeRoll,'x');show(tapeRoll,P3.group.position.x+18*tp,.05,5)}
+    if(t<.28)L('③ 전체에 양면테이프',cx+9,.3,6.2,'warn big');if(t>.5)L('맨 아래쪽에 단단히',cx,cy+P3.R(p*18)+.3,5,'big');if(t>.5)L('고리',cx,cy+P5.outer+.2,-3.5);if(t>.95)L('접안부 완성!',cx,cy+4.5,1,'good big')}},
+
+ {g:'C',short:'경통 말기',title:'⑥ 경통 말기',fig:'⑥ 경통 19 × 25cm · 완성한 접안부',
+  body:'⑥번의 <b>한쪽 옆 가장자리와 끝</b>에 양면테이프를 <b>ㄱ자</b>로 붙이고, <b>고리(④⑤)가 그 가장자리에 오게</b> 접안부를 올려 돌돌 말아요. <b>위·아래 지름이 같게!</b>',
+  tools:['양면테이프'],dur:11,rot:PI/2,cam:{p:[-33,24,2],t:[-4,2,-4]},
+  apply(t){const cx=-8,t0=seg(t,0,.11),t1=seg(t,.11,.2),e0=seg(t,.21,.31),d=ease(seg(t,.32,.42)),e1=seg(t,.79,.88),p=.9*ease(seg(t,.44,.78))+.1*ease(seg(t,.89,.98));
+    const E0={s0:.3,s1:24.7,w0:.25,w1:1.15},E1={s0:23.9,s1:24.7,w0:.3,w1:18.7,dir:'w'};
+    P6.setDecor({nums:[{t:'6',s:16,w:9.5,r:1.6,rot:1}],tapes:[Object.assign({p:t0,peel:e0},E0),Object.assign({p:t1,peel:e1},E1)]});
+    const cy=rollMat(P6,p,cx,0);placeE(cx,cy+(1-d)*10,-4,{c4:1,c5:1,c3:1});peelL(P6,E0,e0);peelL(P6,E1,e1);
+    if(t<.11){rollAxis(tapeRoll,'z');show(tapeRoll,cx+.3+24.4*t0,.05,-8.8)}else if(t<.2){rollAxis(tapeRoll,'x');show(tapeRoll,cx+24.3,.05,-9.2+18.4*t1)}
+    if(t<.21)L('ㄱ자로 양면테이프',cx+14,.3,-8.8,'warn big');
+    L('⑥ 경통',cx+(1-p)*14+2,.3,6,'big');if(t>.32)L('접안부',cx,cy+(1-d)*10+4,-12);if(t>.32&&t<.78)L('고리를 가장자리에 맞춰',cx,cy+(1-d)*10+P5.outer+.3,-7.5,'warn');if(t>.9)L('위·아래 지름이 같게!',cx,cy+4.3,4,'warn big')}},
+ {g:'C',short:'렌즈 틈',title:'렌즈 들어갈 틈 만들기',fig:'⑦ 대물렌즈 셀 9 × 30cm · ⑧ 렌즈 고정용 2장',
+  body:'⑧번 2장에 <b>양면테이프</b>를 길게 붙이고 ⑦번 <b>모서리에 맞춰</b> 나란히 붙이면, 가운데에 대물렌즈가 들어갈 <b>틈</b>이 생겨요.',
+  tools:['양면테이프'],dur:9.5,rot:PI/2,cam:{p:[-40,32,6],t:[-3,1,0]},
+  apply(t){const cx=-20,ta=seg(t,0,.28),ea=seg(t,.3,.4),eb=seg(t,.41,.51),j=ease(seg(t,.54,.84));
+    P7.setDecor({nums:[{t:'7',s:27,w:4.5,r:1.1,rot:1}]});flat(P7,cx,0);
+    const E={s0:.3,s1:24.2,w0:1.15,w1:3.05},tp=(k,pe)=>[Object.assign({p:clamp(ta*2-k,0,1),peel:pe},E)];
+    P8a.setDecor({nums:[{t:'8',s:12,w:2.1,r:1.1,rot:1}],tapes:tp(0,ea)});P8b.setDecor({nums:[{t:'8',s:12,w:2.1,r:1.1,rot:1}],tapes:tp(1,eb)});
+    flat(P8a,cx,lerp(-12,-2.4,j),.07);flat(P8b,cx,lerp(12,2.4,j),.07);peelL(P8a,E,ea);peelL(P8b,E,eb);
+    if(ta>0&&ta<1){rollAxis(tapeRoll,'z');const k=ta<.5?0:1,q=clamp(ta*2-k,0,1);show(tapeRoll,cx+.3+23.9*q,.1,k?12:-12)}
+    placeScope(17,SCY,-9,0,false);
+    L('⑦',cx+27,.3,0,'big');if(t<.3||t>.52){L('⑧',cx+12,.4,lerp(-12,-2.4,j)-2.4,'big');L('⑧',cx+12,.4,lerp(12,2.4,j)+2.4,'big')}
+    if(t>.86){L('렌즈 들어갈 틈',cx+4,.3,0,'warn big');L('모서리에 맞춰',cx+24.5,.3,-4.5)}L('경통',17,8.6,0)}},
+ {g:'C',short:'대물렌즈',title:'대물렌즈 넣고 말기',fig:'대물렌즈 7.5cm · ⑦ 대물렌즈 셀',
+  body:'대물렌즈(7.5cm)를 틈 가운데에 <b>수직으로</b> 넣고 돌돌 말아, <b>끝을 양면테이프로</b> 고정해요.',
+  warn:'대물렌즈가 기울면 상이 흐려져요. 가운데 수직으로!',tools:['대물렌즈 7.5cm','양면테이프'],dur:9.5,rot:PI/2,cam:{p:[-38,20,8],t:[-10,3,0]},
+  apply(t){const cx=-20,d=ease(seg(t,0,.22)),tp=seg(t,.24,.36),pe=seg(t,.78,.87),p=.93*ease(seg(t,.39,.77))+.07*ease(seg(t,.88,.98));
+    const E={s0:29,s1:29.8,w0:.2,w1:8.8,dir:'w'};
+    P7.setDecor(Object.assign({},D7,{tapes:[Object.assign({p:tp,peel:pe},E)]}));
+    const cy=rollMat(P7,p,cx,0);lensO.visible=true;lensO.position.set(cx,cy+(1-d)*10,0);peelL(P7,E,pe);
+    if(tp>0&&tp<1){rollAxis(tapeRoll,'x');show(tapeRoll,cx+29.4,.05,-4.2+8.4*tp)}
+    placeScope(17,SCY,-9,0,false);
+    L('대물렌즈 7.5cm',cx,cy+(1-d)*10+4.3,0,'big');if(t>.22&&t<.6)L('가운데 수직으로',cx,cy,-5.5,'warn big');if(tp>0&&tp<1)L('끝은 양면테이프',cx+29.4,5,0,'warn');L('경통',17,8.6,0)}},
+ {g:'C',short:'완성!',title:'끼우고 절연테이프·목공풀로 고정 — 완성!',fig:'완성된 굴절 망원경',
+  body:'대물렌즈 통을 경통에 끼우고, 먼저 <b>절연테이프</b>를 경통 양 끝과 대물렌즈 통 양 끝에 <b>한 바퀴씩</b> 감아요. 그다음 <b>감은 부분의 옆면</b>(둥근 끝면)과 <b>접안부 바깥 감은 부분</b>에 <b>목공풀</b>을 발라 고정하면 완성! 단, <b>렌즈 통</b>과 <b>고리 안쪽 틈</b>은 빼요.',
+  warn:'앞뒤로 움직이는 접안부(고리 안쪽)에는 목공풀을 절대 바르지 마세요. 태양은 절대로 보지 마세요!',tools:['절연테이프','목공풀'],dur:18,rot:PI/2,cam:{p:[-40,26,3],t:[-2,2.5,2]},
+  /* 장면마다 카메라가 그쪽으로 돌아가서 보여 줌 (0: 전체, 1~3: 목공풀 옆면, 4: 초점, 5: 절연테이프) */
+  cams:[{p:[-40,26,3],t:[-2,2.5,2]},{p:[-20,15,-30],t:[0,3.5,-8]},{p:[-12,10,-24],t:[0,4,-9]},{p:[-22,16,-14],t:[0,4,5]},{p:[-40,26,3],t:[-2,2.5,2]},{p:[-34,18,6],t:[0,3,5]}],
+  apply(t,time){const T0=-9,k=ease(seg(t,0,.08)),fa=seg(t,.79,1);const f=fa*2.7*(1-Math.cos(time*1.4));
+    const ph=t<.09?0:t<.375?5:t<.51?1:t<.64?2:t<.78?3:4;if(this._ph!==ph){this._ph=ph;camTo(this.cams[ph])}
+    const Y=SCY;placeScope(0,Y,T0,f,false);const cz=T0+19.5+(1-k)*16;tube(P7,1,0,Y,cz);lensO.visible=true;lensO.position.set(0,Y,cz);
+    /* 절연테이프 4곳을 차례로 한 바퀴씩 */
+    TAPE_BANDS.forEach((B,i)=>{const s0=.1+i*.065,w=ease(seg(t,s0,s0+.06));if(w<=0)return;const th=w*2*PI;setBand(B,th,Y);
+      if(w<1){const a=PI+th,R=B.R+2.2;rollAxis(eTapeB,'z',true);show(eTapeB,Math.sin(a)*R,Y+Math.cos(a)*R,(B.z0+B.z1)/2);
+        L('절연테이프 한 바퀴: '+B.name,0,Y+B.R+3,(B.z0+B.z1)/2,'warn big')}});
+    /* 옆면 3곳에 차례로: 목공풀을 한 바퀴 짜고 → 펴 바르기 */
+    const N=glueDots.length;
+    GLUE_FACES.forEach((F,i)=>{const s0=.38+i*.13,g=seg(t,s0,s0+.08),sp=ease(seg(t,s0+.08,s0+.12)),R=(F.r0+F.r1)/2,out=-1,z=F.z-(F.move?f:0);
+      if(g<=0)return;
+      if(sp<1)for(let j=0;j<N;j++){if(j/N<g){const a=(j/N)*PI*2;glueDots[j].visible=true;glueDots[j].scale.set(1,.6*(1-sp*.7),1);glueDots[j].position.set(-Math.sin(a)*R,Y+Math.cos(a)*R,z+out*.12)}}
+      if(g<1){const a=g*PI*2;glue.visible=true;glue.position.set(-Math.sin(a)*(R+.5),Y+Math.cos(a)*(R+.5),z+out*.7);glue.rotation.set(0,0,-a)}
+      if(sp>0){F.mesh.visible=true;F.mesh.material.opacity=.6*sp;F.mesh.position.set(0,Y,z)}
+      if(t>s0&&t<s0+.13)L(F.name+'에 목공풀',0,Y+F.r1+1.4+(F.move?1.6:0),z,'warn big')});
+    const ez=T0+5.5-f;
+    L('대물렌즈 7.5cm',0,Y+P7.outer+.2,T0+22);L('경통 ⑥',0,Y+P6.outer+.2,T0+9);
+    L('고리 ④⑤ (경통 속)',-6,.2,T0+2);L('접안렌즈 3cm × 2',-5,.2,ez-5.4);L('눈',0,Y+1,ez-8.4,'big');
+    if(t>.38&&t<.64)L('렌즈 통·고리 안쪽 틈은 풀 X',0,Y-P2l.outer-.6,T0-3,'bad');
+    if(t>=.78){L('감은 옆면: 목공풀 O',0,Y+P7.outer+2.6,T0+15,'good');L('움직이는 곳: 풀 X',0,Y+P2l.outer+.3,ez-6.2,'bad')}
+    if(t>.79)L('↔ 밀고 당겨 초점 맞추기',-9,.2,ez-8,'warn big')}}
+];
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+const tabsEl=$('tabs'),chipsEl=$('chips'),lblLayer=$('labels');
+let cur=0,stepStart=performance.now(),showLabels=true,xray=false;
+STEPS.forEach((s,i)=>{s.idx=i;s.num=STEPS.filter((q,j)=>j<=i&&q.g===s.g).length});
+GROUPS.forEach(g=>{const b=document.createElement('button');b.className='tab';b.textContent=g.name;b.onclick=()=>go(STEPS.findIndex(s=>s.g===g.id));g.el=b;tabsEl.appendChild(b)});
+function numLabel(s){return s.g==='D'?String(s.num):String(s.idx-7)}
+function renderChips(){const s=STEPS[cur];chipsEl.innerHTML='';STEPS.filter(q=>q.g===s.g).forEach(q=>{const b=document.createElement('button');b.className='chip'+(q.idx===cur?' on':q.idx<cur?' done':'');
+  b.innerHTML=`<b>${numLabel(q)}</b><span>${q.short}</span>`;b.onclick=()=>go(q.idx);chipsEl.appendChild(b)});
+  GROUPS.forEach(g=>g.el.classList.toggle('on',g.id===s.g))}
+let camTween=null;
+function camTo(c,d=1300){const p=root.localToWorld(V(...c.p)),tg=root.localToWorld(V(...c.t));camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:p,t1:tg,st:performance.now(),d}}
+function go(i,keepCam){cur=clamp(i,0,STEPS.length-1);const s=STEPS[cur];stepStart=performance.now();s._ph=0;
+  root.rotation.y=s.rot;root.updateMatrixWorld(true);
+  const gname=GROUPS.find(g=>g.id===s.g);
+  $('figS').textContent=s.fig;
+  $('modeV').textContent=gname.mode==='도안'?'도안':'PART '+gname.mode;$('modeS').textContent=`STEP ${String(cur+1).padStart(2,'0')} / ${STEPS.length}`;
+  $('cnt').textContent=`${cur+1}/${STEPS.length}`;
+  $('htT').innerHTML=`<em>${s.g==='D'?'도안 '+s.num:s.g+' '+(s.idx-7)}</em>${s.title}${cur===STEPS.length-1?'<span class="done-badge">완성</span>':''}`;
+  $('htB').innerHTML=s.body;const w=$('htW');w.classList.toggle('show',!!s.warn);w.innerHTML=s.warn?'⚠ '+s.warn:'';
+  $('toolList').innerHTML=s.tools.length?s.tools.map(n=>`<div class="tool"><i style="background:${TCOL[n]||'#ccc'}"></i>${n}</div>`).join(''):'<div class="tool none">손으로 해요</div>';
+  renderChips();
+  if(!keepCam){const p=root.localToWorld(V(...s.cam.p)),tg=root.localToWorld(V(...s.cam.t));camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:p,t1:tg,st:performance.now(),d:1300}}
+}
+$('prev').onclick=()=>go(cur-1);$('next').onclick=()=>go(cur+1);$('replay').onclick=()=>{stepStart=performance.now()};
+$('lblBtn').onclick=e=>{showLabels=!showLabels;e.currentTarget.classList.toggle('on',showLabels)};
+$('xrayBtn').onclick=e=>{xray=!xray;e.currentTarget.classList.toggle('on',xray);sheetMats.forEach(m=>{m.transparent=xray;m.opacity=xray?.28:1;m.depthWrite=!xray;m.needsUpdate=true})};
+addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='PageDown'){go(cur+1);e.preventDefault()}else if(e.key==='ArrowLeft'||e.key==='PageUp'){go(cur-1);e.preventDefault()}else if(e.key===' '){stepStart=performance.now();e.preventDefault()}else if(e.key==='l'||e.key==='L')$('lblBtn').click();else if(e.key==='x'||e.key==='X')$('xrayBtn').click()});
+controls.addEventListener('start',()=>{camTween=null});
+
+const pool=[];
+function renderLabels(){const w=canvas.clientWidth,h=canvas.clientHeight;let n=0;
+  if(showLabels)for(const l of LBL){const v=root.localToWorld(l.v.clone()).project(camera);if(v.z>1)continue;
+    let el=pool[n];if(!el){el=document.createElement('div');pool.push(el);lblLayer.appendChild(el)}
+    if(el._t!==l.t){el.textContent=l.t;el._t=l.t}if(el._c!==l.c){el.className='lbl '+l.c;el._c=l.c}
+    el.style.display='block';const x=(v.x+1)/2*w,y=(1-v.y)/2*h;el.style.transform=`translate(${x-el.offsetWidth/2}px,${y-el.offsetHeight-16}px)`;n++}
+  for(let i=n;i<pool.length;i++)pool[i].style.display='none'}
+
+function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(canvas);
+function frame(now){
+  const s=STEPS[cur],t=clamp((now-stepStart)/(s.dur*1000),0,1);
+  $('progBar').style.width=(t*100)+'%';
+  hideAll();LBL=[];s.apply(t,now/1000);
+  if(camTween){const k=ease(clamp((now-camTween.st)/camTween.d,0,1));camera.position.lerpVectors(camTween.p0,camTween.p1,k);controls.target.lerpVectors(camTween.t0,camTween.t1,k);if(k>=1)camTween=null}
+  controls.update();renderer.render(scene,camera);renderLabels();requestAnimationFrame(frame)}
+drawSheetTo(finalCv,8,1,true);finalTex.needsUpdate=true;
+document.fonts&&document.fonts.ready.then(()=>{drawSheetTo(finalCv,8,1,true);finalTex.needsUpdate=true;sheetKey='';ALLSHEETS.forEach(r=>{r.decorKey=null})});
+resize();go(0);camera.position.copy(camTween.p1);controls.target.copy(camTween.t1);camTween=null;
+requestAnimationFrame(frame);
+window.__go=go;window.__state=()=>({cur});
+window.__seek=t=>{stepStart=performance.now()-t*STEPS[cur].dur*1000};
+window.__test=()=>{const bad=[];STEPS.forEach((s,i)=>{for(let k=0;k<=100;k++){try{hideAll();LBL=[];s.apply(k/100,k*.1)}catch(e){bad.push(i+1+'단계 t='+k/100+': '+e.message);break}}});go(cur,true);return bad};
+</script>
+</body>
+</html>
