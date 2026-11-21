@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>과학 수업 웹앱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f7;--card:#fff;--ink:#18233a;--muted:#5d6b82;--line:#d6dde8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR','Malgun Gothic','맑은 고딕','Apple SD Gothic Neo',sans-serif}
+header{padding:clamp(28px,5vw,60px) clamp(20px,5vw,64px) 10px}
+h1{font-family:'Do Hyeon','Noto Sans KR',sans-serif;font-weight:400;font-size:clamp(40px,5.5vw,84px);margin:0;letter-spacing:1px}
+header p{font-size:clamp(18px,1.8vw,28px);color:var(--muted);margin:10px 0 0}
+main{padding:clamp(16px,3vw,40px) clamp(20px,5vw,64px) 40px}
+.sec{font-family:'Do Hyeon','Noto Sans KR',sans-serif;font-size:clamp(24px,2.4vw,38px);margin:26px 0 14px;display:flex;align-items:center;gap:12px}
+.sec::after{content:"";flex:1;height:3px;border-radius:2px;background:var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:clamp(14px,1.6vw,26px)}
+a.app{display:flex;gap:clamp(14px,1.4vw,24px);align-items:center;text-decoration:none;color:inherit;background:var(--card);border:3px solid transparent;border-radius:22px;padding:clamp(18px,1.8vw,30px);box-shadow:0 4px 16px rgba(24,35,58,.08);transition:transform .15s,border-color .15s,box-shadow .15s}
+a.app:hover,a.app:focus-visible{transform:translateY(-3px);border-color:var(--c);box-shadow:0 10px 26px rgba(24,35,58,.14);outline:none}
+.ic{flex:none;width:clamp(76px,6.5vw,118px);height:clamp(76px,6.5vw,118px);border-radius:20px;display:grid;place-items:center;font-size:clamp(42px,3.8vw,68px);background:var(--c2)}
+.tx{min-width:0}
+.tt{word-break:keep-all;font-family:'Do Hyeon','Noto Sans KR',sans-serif;font-size:clamp(30px,2.7vw,46px);line-height:1.15;color:var(--c)}
+.ds{font-size:clamp(17px,1.35vw,23px);color:var(--muted);margin-top:8px;line-height:1.45;word-break:keep-all}
+.star{--c:#2b4fb8;--c2:#e3eafc}
+.gene{--c:#2f7d4a;--c2:#e2f3e7}
+.music{--c:#7b3fb0;--c2:#efe5f8}
+footer{text-align:center;color:var(--muted);font-size:clamp(14px,1.1vw,18px);padding:10px 20px 34px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔭 과학 수업 웹앱</h1>
+  <p>오늘 쓸 앱을 눌러서 시작하세요.</p>
+</header>
+<main>
+  <div class="sec">⭐ 별과 우주</div>
+  <div class="grid">
+    <a class="app star" href="star-magnitude/"><div class="ic">✨</div><div class="tx"><div class="tt">별 등급 트레이닝</div><div class="ds">겉보기 등급과 절대 등급으로 별의 밝기 비교하기</div></div></a>
+    <a class="app star" href="parallax-detective/"><div class="ic">🔍</div><div class="tx"><div class="tt">연주 시차 사진 탐정</div><div class="ds">6개월 간격 사진에서 시차를 재고 별까지의 거리 구하기</div></div></a>
+    <a class="app star" href="nebula-cards/"><div class="ic">🌌</div><div class="tx"><div class="tt">성운·성단 카드 게임</div><div class="ds">실제 우주 사진으로 성운과 성단 구별하기</div></div></a>
+  </div>
+
+  <div class="sec">🧬 생식과 유전</div>
+  <div class="grid">
+    <a class="app gene" href="pea-genetics/"><div class="ic">🫛</div><div class="tx"><div class="tt">완두 유전 시뮬레이터</div><div class="ds">멘델의 완두 교배로 독립의 법칙 알아보기</div></div></a>
+  </div>
+
+  <div class="sec">🎵 함께 만든 앱</div>
+  <div class="grid">
+    <a class="app music" href="drum-pad/"><div class="ic">🥁</div><div class="tx"><div class="tt">전자드럼 패드 연주</div><div class="ds">음악 수업용 드럼 패드 · 휴대폰·태블릿에 앱처럼 설치 가능</div></div></a>
+  </div>
+</main>
+<footer>제작: 과학교사 구인회</footer>
+</body>
+</html>
