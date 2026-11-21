@@ -68,6 +68,70 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
 .prog i{display:block;height:100%;width:0;background:var(--orange)}
 .done-badge{display:inline-block;margin-left:10px;background:#2f8f3a;color:#fff;border-radius:6px;padding:0 10px;font-size:22px;vertical-align:middle}
 @media (max-width:900px){#panel{grid-template-columns:1fr}.ht-body{font-size:19px}.ht-title{font-size:24px}.mode-v{font-size:28px}.fig-s{font-size:15px}}
+.touch-only{display:none}
+/* 휴대폰 세로 */
+@media (max-width:700px){
+  #app{height:100dvh;grid-template-rows:minmax(0,1fr) auto}
+  #panel{gap:6px;padding:6px;max-height:47dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #panel .card:last-child{order:-1}
+  .card{padding:8px 10px}
+  .card-h{font-size:11px;margin-bottom:6px;letter-spacing:.04em}
+  .card-h>span:first-child{white-space:nowrap}
+  .ctrl button{font-size:15px;padding:6px 10px;white-space:nowrap;flex:1}
+  #panel .card:last-child .card-h>span:first-child{display:none}
+  #panel .card:last-child .ctrl{flex:1}
+  .ht-title{font-size:19px}.ht-title em{padding:0 7px;margin-right:6px}
+  .ht-body{font-size:16px;line-height:1.5}
+  .ht-warn{font-size:14px;padding:5px 9px}
+  .done-badge{font-size:15px}
+  .tabs{gap:4px;margin-bottom:6px}
+  .tab{font-size:13px;padding:6px 2px;line-height:1.25;word-break:keep-all}
+  .chips{display:flex;overflow-x:auto;gap:5px;padding-bottom:2px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 78px;padding:4px 3px}
+  .chip b{font-size:17px}.chip span{font-size:12px}
+  .fig{left:6px;top:6px;padding:5px 8px;max-width:calc(100% - 128px)}
+  .fig-t{font-size:12px}.fig-s{font-size:13px;line-height:1.35;margin-top:2px}
+  .side{right:6px;top:6px;gap:5px}
+  .mode,.tools{min-width:0;padding:4px 8px}
+  .mode{width:112px}.tools{width:112px}
+  .k{font-size:9px;letter-spacing:.06em}
+  .mode-v{font-size:19px}.mode-s{font-size:11px}
+  #toolList{gap:2px;margin-top:3px}
+  .tool{font-size:12px;gap:5px}.tool i{width:10px;height:10px}
+  .tool.none{font-size:11px}
+  .hint{left:6px;bottom:6px;font-size:10px;padding:2px 6px;max-width:calc(100% - 150px)}
+  .vbtns{right:6px;bottom:6px;gap:5px}
+  .pill{font-size:14px;padding:4px 11px}
+  .lbl{font-size:12px;padding:2px 8px;border-width:1.5px}
+  .lbl::after{height:10px}
+  .lbl.big{font-size:14px;padding:3px 10px}
+}
+/* 휴대폰 가로 */
+@media (max-height:520px) and (orientation:landscape){
+  #app{height:100dvh;grid-template-rows:1fr;grid-template-columns:minmax(0,1fr) min(44vw,400px)}
+  #panel{grid-template-columns:1fr;gap:6px;padding:6px;overflow-y:auto;align-content:start}
+  #panel .card:last-child{order:-1}
+  .card{padding:8px 10px}
+  .card-h{font-size:11px;margin-bottom:6px}
+  .ctrl button{font-size:14px;padding:4px 9px;white-space:nowrap;flex:1}
+  #panel .card:last-child .card-h>span:first-child{display:none}
+  #panel .card:last-child .ctrl{flex:1}
+  .ht-title{font-size:18px}.ht-body{font-size:15px}.ht-warn{font-size:13px}
+  .tab{font-size:12px;padding:5px 2px}
+  .chip b{font-size:16px}.chip span{font-size:11px}
+  .chips{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
+  .fig{left:6px;top:6px;padding:5px 8px;max-width:calc(100% - 128px)}
+  .fig-t{font-size:12px}.fig-s{font-size:13px}
+  .side{right:6px;top:6px;gap:5px}
+  .mode,.tools{min-width:0;width:112px;padding:4px 8px}
+  .k{font-size:9px}.mode-v{font-size:19px}.mode-s{font-size:11px}
+  .tool{font-size:12px}.tool i{width:10px;height:10px}
+  .hint{display:none}
+  .vbtns{right:6px;bottom:6px}.pill{font-size:13px;padding:4px 10px}
+  .lbl{font-size:12px;padding:2px 8px}.lbl.big{font-size:14px}
+}
+@media (hover:none) and (pointer:coarse){.key-only{display:none}.touch-only{display:inline}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
@@ -81,7 +145,7 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
       <div class="mode box"><div class="k">PART</div><div class="mode-v" id="modeV">도안</div><div class="mode-s" id="modeS">STEP 01 / 22</div></div>
       <div class="tools box"><div class="k">TOOLS · 도구</div><div id="toolList"></div></div>
     </div>
-    <div class="hint">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 &nbsp;|&nbsp; 제작: 과학교사 구인회, 노정현 · v1.0 (2026.11.22)</div>
+    <div class="hint"><span class="key-only">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 &nbsp;|&nbsp; </span><span class="touch-only">한 손가락: 돌리기 · 두 손가락: 확대 <br></span>제작: 과학교사 구인회, 노정현 · v1.1 (2026.11.22)</div>
     <div class="vbtns"><button id="xrayBtn" class="pill">속 보기</button><button id="lblBtn" class="pill on">라벨</button></div>
   </div>
   <div id="panel">
@@ -628,9 +692,13 @@ GROUPS.forEach(g=>{const b=document.createElement('button');b.className='tab';b.
 function numLabel(s){return s.g==='D'?String(s.num):String(s.idx-7)}
 function renderChips(){const s=STEPS[cur];chipsEl.innerHTML='';STEPS.filter(q=>q.g===s.g).forEach(q=>{const b=document.createElement('button');b.className='chip'+(q.idx===cur?' on':q.idx<cur?' done':'');
   b.innerHTML=`<b>${numLabel(q)}</b><span>${q.short}</span>`;b.onclick=()=>go(q.idx);chipsEl.appendChild(b)});
+  const on=chipsEl.querySelector('.chip.on');if(on&&chipsEl.scrollWidth>chipsEl.clientWidth)chipsEl.scrollLeft=on.offsetLeft-chipsEl.offsetLeft-(chipsEl.clientWidth-on.offsetWidth)/2;
   GROUPS.forEach(g=>g.el.classList.toggle('on',g.id===s.g))}
 let camTween=null;
-function camTo(c,d=1300){const p=root.localToWorld(V(...c.p)),tg=root.localToWorld(V(...c.t));camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:p,t1:tg,st:performance.now(),d}}
+/* 좁은(세로) 화면에서는 옆이 잘리지 않게 카메라를 뒤로 뺌 */
+function camZoom(){return clamp(1.55/Math.max(camera.aspect,.3),1,2.3)}
+function camPT(c){const tg=root.localToWorld(V(...c.t)),p=root.localToWorld(V(...c.p));p.sub(tg).multiplyScalar(camZoom()).add(tg);return [p,tg]}
+function camTo(c,d=1300){const [p,tg]=camPT(c);camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:p,t1:tg,st:performance.now(),d}}
 function go(i,keepCam){cur=clamp(i,0,STEPS.length-1);const s=STEPS[cur];stepStart=performance.now();s._ph=0;
   root.rotation.y=s.rot;root.updateMatrixWorld(true);
   const gname=GROUPS.find(g=>g.id===s.g);
@@ -641,7 +709,7 @@ function go(i,keepCam){cur=clamp(i,0,STEPS.length-1);const s=STEPS[cur];stepStar
   $('htB').innerHTML=s.body;const w=$('htW');w.classList.toggle('show',!!s.warn);w.innerHTML=s.warn?'⚠ '+s.warn:'';
   $('toolList').innerHTML=s.tools.length?s.tools.map(n=>`<div class="tool"><i style="background:${TCOL[n]||'#ccc'}"></i>${n}</div>`).join(''):'<div class="tool none">손으로 해요</div>';
   renderChips();
-  if(!keepCam){const p=root.localToWorld(V(...s.cam.p)),tg=root.localToWorld(V(...s.cam.t));camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:p,t1:tg,st:performance.now(),d:1300}}
+  if(!keepCam){const [p,tg]=camPT(s.cam);camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:p,t1:tg,st:performance.now(),d:1300}}
 }
 $('prev').onclick=()=>go(cur-1);$('next').onclick=()=>go(cur+1);$('replay').onclick=()=>{stepStart=performance.now()};
 $('lblBtn').onclick=e=>{showLabels=!showLabels;e.currentTarget.classList.toggle('on',showLabels)};
