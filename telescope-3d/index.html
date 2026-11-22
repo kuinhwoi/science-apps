@@ -29,7 +29,7 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
 .tool{display:flex;align-items:center;gap:8px;font:700 19px 'Noto Sans KR'}
 .tool i{width:14px;height:14px;border-radius:3px;border:1.5px solid #1b1b1b;flex:none}
 .tool.none{color:#888;font-weight:500;font-size:16px}
-.hint{position:absolute;left:14px;bottom:10px;font:600 14px 'Noto Sans KR';color:#3a3a3a;background:rgba(246,243,234,.78);padding:4px 10px;border-radius:6px}
+.hint{position:absolute;left:14px;bottom:10px;max-width:calc(100% - 350px);font:600 14px 'Noto Sans KR';color:#3a3a3a;background:rgba(246,243,234,.78);padding:4px 10px;border-radius:6px}
 .vbtns{position:absolute;right:14px;bottom:12px;display:flex;gap:8px}
 .pill{font:800 18px 'Noto Sans KR';background:#fff;border:var(--line);border-radius:999px;padding:6px 16px;cursor:pointer}
 .pill.on{background:var(--ink);color:#fff}
@@ -100,8 +100,9 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
   #toolList{gap:2px;margin-top:3px}
   .tool{font-size:12px;gap:5px}.tool i{width:10px;height:10px}
   .tool.none{font-size:11px}
-  .hint{left:6px;bottom:6px;font-size:10px;padding:2px 6px;max-width:calc(100% - 150px)}
+  .hint{left:6px;bottom:6px;font-size:10px;padding:2px 6px;max-width:calc(100% - 190px)}
   .vbtns{right:6px;bottom:6px;gap:5px}
+  .pill .pt{display:none}
   .pill{font-size:14px;padding:4px 11px}
   .lbl{font-size:12px;padding:2px 8px;border-width:1.5px}
   .lbl::after{height:10px}
@@ -145,8 +146,8 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
       <div class="mode box"><div class="k">PART</div><div class="mode-v" id="modeV">도안</div><div class="mode-s" id="modeS">STEP 01 / 22</div></div>
       <div class="tools box"><div class="k">TOOLS · 도구</div><div id="toolList"></div></div>
     </div>
-    <div class="hint"><span class="key-only">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 &nbsp;|&nbsp; </span><span class="touch-only">한 손가락: 돌리기 · 두 손가락: 확대 <br></span>제작: 과학교사 구인회, 노정현 · v1.2 (2026.11.22)</div>
-    <div class="vbtns"><button id="xrayBtn" class="pill">속 보기</button><button id="lblBtn" class="pill on">라벨</button></div>
+    <div class="hint"><span class="key-only">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 · S: 소리 &nbsp;|&nbsp; </span><span class="touch-only">한 손가락: 돌리기 · 두 손가락: 확대 <br></span>제작: 과학교사 구인회, 노정현 · v1.3 (2026.11.22)</div>
+    <div class="vbtns"><button id="sndBtn" class="pill on" title="소리 켜기/끄기 (S)">🔊<span class="pt"> 소리</span></button><button id="xrayBtn" class="pill">속 보기</button><button id="lblBtn" class="pill on">라벨</button></div>
   </div>
   <div id="panel">
     <div class="card">
@@ -683,6 +684,80 @@ const STEPS=[
     if(t>.79)L('↔ 밀고 당겨 초점 맞추기',-9,.2,ez-8,'warn big')}}
 ];
 
+/* ---------- 효과음 (소리 파일 없이 페이지 안에서 만듦) ---------- */
+const SND=(()=>{
+  let ctx=null,master=null,noise=null,on=localStorage.getItem('telescope3d.sound')!=='off';const live=new Set();
+  function init(){if(ctx){if(ctx.state==='suspended')ctx.resume();return}
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;ctx=new AC();master=ctx.createGain();master.gain.value=.85;master.connect(ctx.destination);
+    const len=ctx.sampleRate*2;noise=ctx.createBuffer(1,len,ctx.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1}
+  addEventListener('pointerdown',init);addEventListener('keydown',init);
+  const now=()=>ctx.currentTime;
+  function env(g,t0,a,hold,r,peak){g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(peak,t0+a);g.gain.setValueAtTime(peak,t0+a+hold);g.gain.linearRampToValueAtTime(0,t0+a+hold+r)}
+  function track(n,end){live.add(n);n.onended=()=>live.delete(n);n.stop(end+.05)}
+  /* 잡음 소리: 필터 + 떨림(AM) */
+  function nz({len=.2,type='bandpass',f=1000,f2=null,q=1,peak=.3,a=.01,r=.08,am=0,amDepth=.8,t0=0}){
+    const t=now()+t0,src=ctx.createBufferSource();src.buffer=noise;src.loop=true;src.loopStart=Math.random();
+    const fl=ctx.createBiquadFilter();fl.type=type;fl.frequency.setValueAtTime(f,t);if(f2)fl.frequency.exponentialRampToValueAtTime(f2,t+len);fl.Q.value=q;
+    const g=ctx.createGain();env(g,t,a,Math.max(0,len-a-r),r,peak);src.connect(fl);fl.connect(g);
+    let out=g;if(am){const m=ctx.createGain();m.gain.value=1-amDepth;const o=ctx.createOscillator();o.type='square';o.frequency.value=am;const od=ctx.createGain();od.gain.value=amDepth;o.connect(od);od.connect(m.gain);g.connect(m);out=m;o.start(t);track(o,t+len)}
+    out.connect(master);src.start(t,Math.random());track(src,t+len)}
+  function tone({f=440,f2=null,len=.3,type='sine',peak=.2,a=.005,t0=0}){
+    const t=now()+t0,o=ctx.createOscillator();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+len);
+    const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(.0008,t+len);o.connect(g);g.connect(master);o.start(t);track(o,t+len)}
+  const S={
+    tap:()=>{nz({len:.045,type:'highpass',f:2600,peak:.35,a:.002,r:.035});tone({f:1800,f2:900,len:.04,peak:.05})},             // 연필 점 톡
+    scratch:l=>nz({len:l,f:3200,q:1.4,peak:.11,a:.04,r:.08,am:17,amDepth:.6}),                                              // 연필 사각사각
+    cut:l=>{const n=Math.max(1,Math.round(l/.55));for(let i=0;i<n;i++)nz({len:Math.min(.5,l/n),f:2600,f2:1300,q:1.2,peak:.26,a:.03,r:.15,t0:i*l/n})}, // 칼 슥-슥
+    tape:l=>nz({len:Math.min(l,1.6),f:1500,f2:1000,q:.9,peak:.16,a:.05,r:.15,am:31,amDepth:.35}),                             // 양면테이프 쓱
+    peel:l=>{const L=Math.min(Math.max(l,.35),.9);nz({len:L,type:'bandpass',f:900,f2:4200,q:1.1,peak:.34,a:.02,r:.12,am:55,amDepth:.7})}, // 비닐 찌익
+    roll:l=>nz({len:l,type:'lowpass',f:900,q:.7,peak:.15,a:.12,r:.2,am:21,amDepth:.75}),                                    // 골판지 드르륵
+    etape:l=>{nz({len:l,f:2300,f2:2900,q:4,peak:.15,a:.05,r:.12,am:42,amDepth:.5});tone({f:520,f2:700,len:l,type:'triangle',peak:.025,a:.05})}, // 절연테이프 쭈욱
+    glue:()=>{nz({len:.42,type:'lowpass',f:500,f2:250,q:2,peak:.3,a:.02,r:.2});[0,.11,.22].forEach(d=>tone({f:220-d*200,f2:110,len:.09,peak:.12,t0:d}))}, // 목공풀 뿌직
+    tink:()=>{tone({f:2637,len:.7,peak:.12});tone({f:3951,len:.45,peak:.06});tone({f:5274,len:.25,peak:.03})},               // 렌즈 팅
+    thud:()=>{tone({f:110,f2:48,len:.18,peak:.45});nz({len:.08,type:'lowpass',f:700,peak:.22,a:.002,r:.06})},                 // 툭
+    slide:l=>nz({len:l,f:700,q:.8,peak:.08,a:.25,r:.3}),                                                                  // 스르륵
+    chime:()=>[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone({f,len:.55,type:'triangle',peak:.16,t0:i*.12})),             // 딩동댕
+    click:()=>tone({f:1400,f2:900,len:.035,type:'square',peak:.035})                                                       // 딸깍
+  };
+  return {
+    get on(){return on},
+    set(v){on=v;localStorage.setItem('telescope3d.sound',v?'on':'off');if(!v)this.stop()},
+    play(name,len=.3){if(!on||!ctx||ctx.state!=='running')return;try{S[name](len)}catch(e){}},
+    stop(){live.forEach(n=>{try{n.stop()}catch(e){}});live.clear()},
+    names:Object.keys(S),test(name,len=.5){init();S[name](len);return live.size},get state(){return ctx?ctx.state:'none'},
+    init
+  };
+})();
+
+/* 단계마다 소리 나는 때: [시작, 소리, 끝] (0~1 = 단계 진행) */
+const SFX=(()=>{const X={},c=(a,s,b)=>({a,s,b});
+  X[0]=[c(.7,'thud')];
+  X[1]=DSEG[2].dots.map((_,i)=>c((i+.6)/9,'tap'));
+  [2,3,4,5].forEach(k=>{const n=DSEG[k+1].lines.length;X[k]=DSEG[k+1].lines.map((_,i)=>c((i+.15)/n,'scratch',(i+1)/n-.01))});
+  X[6]=CELLS.map((_,i)=>c((i+.5)/CELLS.length,'scratch',(i+.5)/CELLS.length+.035));
+  {let acc=0;X[7]=CUTS.map((_,i)=>{const a=acc/CUTTOT*.74;acc+=CUTLEN[i];return c(a,'cut',acc/CUTTOT*.74-.004)});X[7].push(c(.76,'thud'))}
+  X[8]=[c(.05,'scratch',.24),c(.27,'scratch',.46),c(.52,'tape',.74),c(.77,'tape',.98)];
+  X[9]=[c(.04,'peel',.27),c(.3,'peel',.53),c(.8,'tink'),c(.95,'tink')];
+  X[10]=[c(.08,'roll',.95)];
+  X[11]=[c(.12,'etape',.9)];
+  X[12]=[c(.2,'thud'),c(.36,'thud'),c(.38,'tape',.5),c(.52,'peel',.64),c(.66,'roll',.98)];
+  X[13]=[c(0,'tape',.1),c(.11,'tape',.21),c(.22,'peel',.31),c(.42,'thud'),c(.44,'roll',.79),c(.8,'peel',.88),c(.89,'roll',.98),c(.95,'chime')];
+  X[14]=[c(0,'slide',.35),c(.35,'thud'),c(.58,'tape',.62)];
+  X[15]=[c(.04,'roll',.72),c(.74,'tape',.82),c(.83,'peel',.92),c(.93,'roll',.995),c(.999,'slide',1.25)];
+  X[16]=[c(.04,'roll',.72),c(.74,'tape',.82),c(.83,'peel',.92),c(.93,'roll',.995)];
+  X[17]=[c(.02,'tape',.26),c(.28,'peel',.44),c(.5,'roll',.96),c(.96,'chime')];
+  X[18]=[c(0,'tape',.11),c(.11,'tape',.2),c(.21,'peel',.31),c(.42,'thud'),c(.44,'roll',.78),c(.79,'peel',.88),c(.89,'roll',.98)];
+  X[19]=[c(0,'tape',.14),c(.14,'tape',.28),c(.3,'peel',.4),c(.41,'peel',.51),c(.54,'slide',.84),c(.84,'thud')];
+  X[20]=[c(.22,'tink'),c(.24,'tape',.36),c(.39,'roll',.77),c(.78,'peel',.87),c(.88,'roll',.98)];
+  X[21]=[c(0,'slide',.08),c(.08,'thud'),...[0,1,2,3].map(i=>c(.1+i*.065,'etape',.16+i*.065)),...[0,1,2].map(i=>c(.38+i*.13,'glue')),c(.8,'chime'),c(.82,'slide',.98)];
+  return X})();
+let sfxPrev=-1;
+function runSfx(i,t){const list=SFX[i];if(!list)return;
+  if(t<sfxPrev-1e-6){SND.stop();sfxPrev=-1}           // 다시 보기
+  if(t-sfxPrev>.3&&sfxPrev>=0){sfxPrev=t;return}       // 크게 건너뛰면 소리 생략
+  const dur=STEPS[i].dur;for(const q of list)if(q.a>sfxPrev&&q.a<=t)SND.play(q.s,q.b!=null?(q.b-q.a)*dur:.3);
+  sfxPrev=t}
+
 /* ---------- UI ---------- */
 const $=id=>document.getElementById(id);
 const tabsEl=$('tabs'),chipsEl=$('chips'),lblLayer=$('labels');
@@ -699,7 +774,7 @@ let camTween=null;
 function camZoom(){return clamp(1.55/Math.max(camera.aspect,.3),1,2.3)}
 function camPT(c){const tg=root.localToWorld(V(...c.t)),p=root.localToWorld(V(...c.p));p.sub(tg).multiplyScalar(camZoom()).add(tg);return [p,tg]}
 function camTo(c,d=1300){const [p,tg]=camPT(c);camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:p,t1:tg,st:performance.now(),d}}
-function go(i,keepCam){cur=clamp(i,0,STEPS.length-1);const s=STEPS[cur];stepStart=performance.now();s._ph=0;
+function go(i,keepCam){const prev=cur;cur=clamp(i,0,STEPS.length-1);const s=STEPS[cur];stepStart=performance.now();s._ph=0;SND.stop();sfxPrev=-1;if(!keepCam&&prev!==cur)SND.play('click');
   root.rotation.y=s.rot;root.updateMatrixWorld(true);
   const gname=GROUPS.find(g=>g.id===s.g);
   $('figS').textContent=s.fig;
@@ -712,9 +787,11 @@ function go(i,keepCam){cur=clamp(i,0,STEPS.length-1);const s=STEPS[cur];stepStar
   if(!keepCam){const [p,tg]=camPT(s.cam);camTween={p0:camera.position.clone(),t0:controls.target.clone(),p1:p,t1:tg,st:performance.now(),d:1300}}
 }
 $('prev').onclick=()=>go(cur-1);$('next').onclick=()=>go(cur+1);$('replay').onclick=()=>{stepStart=performance.now()};
+function sndUI(){const b=$('sndBtn');b.classList.toggle('on',SND.on);b.innerHTML=(SND.on?'🔊':'🔇')+'<span class="pt"> 소리</span>'}sndUI();
+$('sndBtn').onclick=()=>{SND.init();SND.set(!SND.on);sndUI()};
 $('lblBtn').onclick=e=>{showLabels=!showLabels;e.currentTarget.classList.toggle('on',showLabels)};
 $('xrayBtn').onclick=e=>{xray=!xray;e.currentTarget.classList.toggle('on',xray);sheetMats.forEach(m=>{m.transparent=xray;m.opacity=xray?.28:1;m.depthWrite=!xray;m.needsUpdate=true})};
-addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='PageDown'){go(cur+1);e.preventDefault()}else if(e.key==='ArrowLeft'||e.key==='PageUp'){go(cur-1);e.preventDefault()}else if(e.key===' '){stepStart=performance.now();e.preventDefault()}else if(e.key==='l'||e.key==='L')$('lblBtn').click();else if(e.key==='x'||e.key==='X')$('xrayBtn').click()});
+addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='PageDown'){go(cur+1);e.preventDefault()}else if(e.key==='ArrowLeft'||e.key==='PageUp'){go(cur-1);e.preventDefault()}else if(e.key===' '){stepStart=performance.now();e.preventDefault()}else if(e.key==='l'||e.key==='L')$('lblBtn').click();else if(e.key==='x'||e.key==='X')$('xrayBtn').click();else if(e.key==='s'||e.key==='S')$('sndBtn').click()});
 controls.addEventListener('start',()=>{camTween=null});
 
 const pool=[];
@@ -730,14 +807,14 @@ new ResizeObserver(resize).observe(canvas);
 function frame(now){
   const s=STEPS[cur],t=clamp((now-stepStart)/(s.dur*1000),0,1);
   $('progBar').style.width=(t*100)+'%';
-  hideAll();LBL=[];s.apply(t,now/1000);
+  hideAll();LBL=[];s.apply(t,now/1000);runSfx(cur,t);
   if(camTween){const k=ease(clamp((now-camTween.st)/camTween.d,0,1));camera.position.lerpVectors(camTween.p0,camTween.p1,k);controls.target.lerpVectors(camTween.t0,camTween.t1,k);if(k>=1)camTween=null}
   controls.update();renderer.render(scene,camera);renderLabels();requestAnimationFrame(frame)}
 drawSheetTo(finalCv,8,1,true);finalTex.needsUpdate=true;
 document.fonts&&document.fonts.ready.then(()=>{drawSheetTo(finalCv,8,1,true);finalTex.needsUpdate=true;sheetKey='';ALLSHEETS.forEach(r=>{r.decorKey=null})});
 resize();go(0);camera.position.copy(camTween.p1);controls.target.copy(camTween.t1);camTween=null;
 requestAnimationFrame(frame);
-window.__go=go;window.__state=()=>({cur});
+window.__go=go;window.__snd={SND,SFX,log:null,run:(i,t)=>runSfx(i,t),reset:()=>{sfxPrev=-1}};{const p0=SND.play.bind(SND);SND.play=(n,l)=>{if(window.__snd.log)window.__snd.log.push([cur,n,+l.toFixed(2)]);p0(n,l)}}window.__state=()=>({cur});
 window.__seek=t=>{stepStart=performance.now()-t*STEPS[cur].dur*1000};
 window.__test=()=>{const bad=[];STEPS.forEach((s,i)=>{for(let k=0;k<=100;k++){try{hideAll();LBL=[];s.apply(k/100,k*.1)}catch(e){bad.push(i+1+'단계 t='+k/100+': '+e.message);break}}});go(cur,true);return bad};
 </script>
