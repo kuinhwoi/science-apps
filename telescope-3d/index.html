@@ -29,10 +29,16 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
 .tool{display:flex;align-items:center;gap:8px;font:700 19px 'Noto Sans KR'}
 .tool i{width:14px;height:14px;border-radius:3px;border:1.5px solid #1b1b1b;flex:none}
 .tool.none{color:#888;font-weight:500;font-size:16px}
-.hint{position:absolute;left:14px;bottom:10px;max-width:calc(100% - 350px);font:600 14px 'Noto Sans KR';color:#3a3a3a;background:rgba(246,243,234,.78);padding:4px 10px;border-radius:6px}
+.hint{position:absolute;left:14px;bottom:10px;max-width:calc(100% - 540px);font:600 14px 'Noto Sans KR';color:#3a3a3a;background:rgba(246,243,234,.78);padding:4px 10px;border-radius:6px}
 .vbtns{position:absolute;right:14px;bottom:12px;display:flex;gap:8px}
 .pill{font:800 18px 'Noto Sans KR';background:#fff;border:var(--line);border-radius:999px;padding:6px 16px;cursor:pointer}
 .pill.on{background:var(--ink);color:#fff}
+.pill svg{width:1em;height:1em;vertical-align:-.13em;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+#app.fold #panel{grid-template-columns:1fr}
+#app.fold #panel .card:first-child,#app.fold .ht-body,#app.fold .ht-warn.show{display:none}
+#app.fold .ht-title{font-size:26px}
+#app.fold .prog{margin-top:6px}
+.ctrl button#fold{background:var(--paper)}
 .lbl{position:absolute;left:0;top:0;white-space:nowrap;background:#fff;border:2px solid #1b1b1b;border-radius:999px;padding:3px 12px;font:800 19px 'JetBrains Mono','Noto Sans KR',monospace;will-change:transform}
 .lbl::after{content:'';position:absolute;left:50%;top:100%;width:2px;height:16px;background:#1b1b1b;transform:translateX(-1px)}
 .lbl.warn{border-color:var(--orange);color:#c2410c;background:#fff4ea}
@@ -100,7 +106,8 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
   #toolList{gap:2px;margin-top:3px}
   .tool{font-size:12px;gap:5px}.tool i{width:10px;height:10px}
   .tool.none{font-size:11px}
-  .hint{left:6px;bottom:6px;font-size:10px;padding:2px 6px;max-width:calc(100% - 190px)}
+  .hint{left:6px;bottom:44px;font-size:10px;padding:2px 6px;max-width:calc(100% - 12px)}
+  #app.fold .ht-title{font-size:17px}
   .vbtns{right:6px;bottom:6px;gap:5px}
   .pill .pt{display:none}
   .pill{font-size:14px;padding:4px 11px}
@@ -119,6 +126,9 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
   #panel .card:last-child .card-h>span:first-child{display:none}
   #panel .card:last-child .ctrl{flex:1}
   .ht-title{font-size:18px}.ht-body{font-size:15px}.ht-warn{font-size:13px}
+  #app.fold .ht-title{font-size:16px}
+  #app.fold{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+  #app.fold #panel .card-h{margin-bottom:2px}
   .tab{font-size:12px;padding:5px 2px}
   .chip b{font-size:16px}.chip span{font-size:11px}
   .chips{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
@@ -146,8 +156,8 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
       <div class="mode box"><div class="k">PART</div><div class="mode-v" id="modeV">도안</div><div class="mode-s" id="modeS">STEP 01 / 22</div></div>
       <div class="tools box"><div class="k">TOOLS · 도구</div><div id="toolList"></div></div>
     </div>
-    <div class="hint"><span class="key-only">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 · S: 소리 &nbsp;|&nbsp; </span><span class="touch-only">한 손가락: 돌리기 · 두 손가락: 확대 <br></span>제작: 과학교사 구인회, 노정현 · v1.3 (2026.11.22)</div>
-    <div class="vbtns"><button id="sndBtn" class="pill on" title="소리 켜기/끄기 (S)">🔊<span class="pt"> 소리</span></button><button id="xrayBtn" class="pill">속 보기</button><button id="lblBtn" class="pill on">라벨</button></div>
+    <div class="hint"><span class="key-only">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 · S: 소리 · F: 전체화면 · H: 설명 접기 &nbsp;|&nbsp; </span><span class="touch-only">한 손가락: 돌리기 · 두 손가락: 확대 <br></span>제작: 과학교사 구인회, 노정현 · v1.4 (2026.11.23)</div>
+    <div class="vbtns"><button id="sndBtn" class="pill on" title="소리 켜기/끄기 (S)">🔊<span class="pt"> 소리</span></button><button id="xrayBtn" class="pill">속 보기</button><button id="lblBtn" class="pill on">라벨</button><button id="fsBtn" class="pill" title="전체화면 (F)"></button></div>
   </div>
   <div id="panel">
     <div class="card">
@@ -156,7 +166,7 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
       <div class="chips" id="chips"></div>
     </div>
     <div class="card">
-      <div class="card-h"><span>HOW TO · 이렇게 해요</span><span class="ctrl"><button id="prev">◀ 이전</button><button id="replay">↻ 다시</button><button id="next">다음 ▶</button></span></div>
+      <div class="card-h"><span>HOW TO · 이렇게 해요</span><span class="ctrl"><button id="prev">◀ 이전</button><button id="replay">↻ 다시</button><button id="next">다음 ▶</button><button id="fold" title="설명 접기/펴기 (H)">▼ 접기</button></span></div>
       <div class="ht-title" id="htT"></div>
       <div class="ht-body" id="htB"></div>
       <div class="ht-warn" id="htW"></div>
@@ -791,7 +801,19 @@ function sndUI(){const b=$('sndBtn');b.classList.toggle('on',SND.on);b.innerHTML
 $('sndBtn').onclick=()=>{SND.init();SND.set(!SND.on);sndUI()};
 $('lblBtn').onclick=e=>{showLabels=!showLabels;e.currentTarget.classList.toggle('on',showLabels)};
 $('xrayBtn').onclick=e=>{xray=!xray;e.currentTarget.classList.toggle('on',xray);sheetMats.forEach(m=>{m.transparent=xray;m.opacity=xray?.28:1;m.depthWrite=!xray;m.needsUpdate=true})};
-addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='PageDown'){go(cur+1);e.preventDefault()}else if(e.key==='ArrowLeft'||e.key==='PageUp'){go(cur-1);e.preventDefault()}else if(e.key===' '){stepStart=performance.now();e.preventDefault()}else if(e.key==='l'||e.key==='L')$('lblBtn').click();else if(e.key==='x'||e.key==='X')$('xrayBtn').click();else if(e.key==='s'||e.key==='S')$('sndBtn').click()});
+/* 전체화면 */
+const FS_IN='<svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>',FS_OUT='<svg viewBox="0 0 24 24"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg>';
+const docEl=document.documentElement,fsReq=docEl.requestFullscreen||docEl.webkitRequestFullscreen;
+const fsNow=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+function fsUI(){const b=$('fsBtn'),on=fsNow();b.classList.toggle('on',on);b.innerHTML=(on?FS_OUT:FS_IN)+`<span class="pt"> ${on?'나가기':'전체화면'}</span>`}
+function fsToggle(){let r;if(fsNow())r=(document.exitFullscreen||document.webkitExitFullscreen).call(document);else if(fsReq)r=fsReq.call(docEl);if(r&&r.catch)r.catch(()=>{})}
+if(!fsReq)$('fsBtn').style.display='none';
+$('fsBtn').onclick=fsToggle;document.addEventListener('fullscreenchange',fsUI);document.addEventListener('webkitfullscreenchange',fsUI);fsUI();
+/* 설명 접기 */
+let fold=false;try{fold=localStorage.getItem('telescope3d.fold')==='1'}catch(e){}
+function foldUI(){$('app').classList.toggle('fold',fold);$('fold').textContent=fold?'▲ 펴기':'▼ 접기'}
+$('fold').onclick=()=>{fold=!fold;try{localStorage.setItem('telescope3d.fold',fold?'1':'0')}catch(e){}foldUI()};foldUI();
+addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='PageDown'){go(cur+1);e.preventDefault()}else if(e.key==='ArrowLeft'||e.key==='PageUp'){go(cur-1);e.preventDefault()}else if(e.key===' '){stepStart=performance.now();e.preventDefault()}else if(e.key==='l'||e.key==='L')$('lblBtn').click();else if(e.key==='x'||e.key==='X')$('xrayBtn').click();else if(e.key==='s'||e.key==='S')$('sndBtn').click();else if(e.ctrlKey||e.metaKey||e.altKey)return;else if(e.key==='f'||e.key==='F')fsToggle();else if(e.key==='h'||e.key==='H')$('fold').click()});
 controls.addEventListener('start',()=>{camTween=null});
 
 const pool=[];
