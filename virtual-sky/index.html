@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>가상 밤하늘 관측소</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#02030a;overflow:hidden;font-family:'Noto Sans KR',system-ui,sans-serif;color:#fff}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+body.idle{cursor:none}
+.btns{position:fixed;right:1.2vh;top:1.2vh;display:flex;gap:.8vh;transition:opacity .4s}
+body.idle .btns{opacity:0;pointer-events:none}
+.btn{font:700 max(14px,1.7vh) 'Noto Sans KR',sans-serif;color:#dfe6ff;background:rgba(20,28,60,.75);border:1.5px solid rgba(160,180,255,.45);border-radius:999px;padding:.6vh 1.1vh;cursor:pointer;line-height:0}
+.ic{width:1.5em;height:1.5em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+#setBtn.on,#ansBtn.on{background:rgba(70,90,170,.95);color:#fff}
+.btn:hover{background:rgba(40,56,110,.9)}
+#panel{position:fixed;right:1.2vh;top:6.5vh;width:min(420px,92vw);background:rgba(12,16,36,.96);border:1.5px solid rgba(160,180,255,.45);border-radius:14px;padding:16px 18px;display:none;font-size:16px;line-height:1.5;color:#e8ecff}
+#panel.show{display:block}
+#panel h3{margin:0 0 6px;font-size:19px}
+#panel label{display:block;margin-top:12px;font-weight:700}
+#panel input[type=range]{width:100%}
+#panel .row{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700}
+#panel small{display:block;color:#aab3dd;font-weight:500;margin-top:2px}
+#panel .keys{margin-top:12px;padding-top:10px;border-top:1px solid rgba(160,180,255,.3);color:#aab3dd;font-size:14px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="btns">
+  <button class="btn" id="ansBtn" title="정답 보기/숨기기 (A)" aria-label="정답"></button>
+  <button class="btn" id="setBtn" title="설정 (S)" aria-label="설정"><svg class="ic" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6 1.6.7 2.2-1.5 2.4 2.4-1.5 2.2.7 1.6 2.6.5v3.4l-2.6.5-.7 1.6 1.5 2.2-2.4 2.4-2.2-1.5-1.6.7-.5 2.6h-3.4l-.5-2.6-1.6-.7-2.2 1.5-2.4-2.4 1.5-2.2-.7-1.6-2.6-.5v-3.4l2.6-.5.7-1.6-1.5-2.2 2.4-2.4 2.2 1.5 1.6-.7z"/><circle cx="12" cy="12" r="3.2"/></svg></button>
+  <button class="btn" id="fsBtn" title="전체화면 (F)" aria-label="전체화면"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+</div>
+<div id="panel">
+  <h3><svg class="ic" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6 1.6.7 2.2-1.5 2.4 2.4-1.5 2.2.7 1.6 2.6.5v3.4l-2.6.5-.7 1.6 1.5 2.2-2.4 2.4-2.2-1.5-1.6.7-.5 2.6h-3.4l-.5-2.6-1.6-.7-2.2 1.5-2.4-2.4 1.5-2.2-.7-1.6-2.6-.5v-3.4l2.6-.5.7-1.6-1.5-2.2 2.4-2.4 2.2 1.5 1.6-.7z"/><circle cx="12" cy="12" r="3.2"/></svg> 선생님 설정</h3>
+  <label>천체 크기: <span id="szV"></span>
+    <input type="range" id="inSize" min="1" max="10" step="1">
+    <small>5m 떨어져서 <b>맨눈으로는 점이나 얼룩으로만 보이고, 망원경으로 봐야 모양이 보이는</b> 크기로 맞춰 주세요. 화면이 클수록 작게.</small></label>
+  <div class="row"><input type="checkbox" id="inNum"> 천체 번호 보이기</div>
+  <label>움직임 빠르기: <span id="spV"></span>
+    <input type="range" id="inSpeed" min="0" max="3" step="1"></label>
+  <div class="keys">A: 정답 보기 · S: 설정 · F: 전체화면 · N: 번호 켜기/끄기<br>설정은 이 브라우저에 저장돼요</div>
+</div>
+<script>
+'use strict';
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+const SCALES=[.55,.65,.75,.87,1,1.15,1.32,1.5,1.75,2];
+const SPEEDS=[0,.5,1,1.6],SPEED_NAMES=['멈춤','느리게','보통','빠르게'];
+let cfg={size:5,num:true,speed:2};
+try{Object.assign(cfg,JSON.parse(localStorage.getItem('fakesky.v2')||'{}'))}catch(e){}
+function save(){try{localStorage.setItem('fakesky.v2',JSON.stringify(cfg))}catch(e){}}
+let showAns=false;
+const TAU=Math.PI*2;
+
+/* ---------- 고정 난수 ---------- */
+let seed=20261126;
+function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+const gauss=()=>(rnd()+rnd()+rnd()+rnd()-2)/2;
+const STARS=[];for(let i=0;i<1100;i++){const m=rnd();STARS.push({x:rnd(),y:rnd(),s:m<.94?.35+rnd()*.6:1+rnd()*1.1,ph:rnd()*TAU,f:.6+rnd()*2.2,c:rnd()})}
+const MW=[];for(let i=0;i<1600;i++)MW.push({u:rnd(),g:gauss()*.1,s:.3+rnd()*.6,a:.2+rnd()*.45});
+function spiral(n,arms,wind,bar){const a=[];for(let i=0;i<n;i++){
+  if(i<n*.22){const r=Math.abs(gauss())*.28;const th=rnd()*TAU;a.push({r,th,bx:bar?gauss()*.42:0,core:1});continue}
+  const arm=i%arms,t=rnd(),r=(bar?.32:.12)+t*.88;const th=arm*TAU/arms+t*wind+gauss()*.35;
+  a.push({r,th,core:0,hii:rnd()<.06})}return a}
+const GAL_A=spiral(700,2,4.6,false),GAL_B=spiral(650,2,3.4,true);
+const IRR=[];for(let i=0;i<380;i++){const c=Math.floor(rnd()*5);IRR.push({c,x:gauss()*.32,y:gauss()*.22,hii:rnd()<.08})}
+const IRR_C=[[-.35,-.05],[.05,.1],[.3,-.15],[-.1,-.25],[.45,.2]];
+const GLOB=[];for(let i=0;i<420;i++){const r=Math.pow(rnd(),2.2)*1,th=rnd()*TAU;GLOB.push({x:Math.cos(th)*r,y:Math.sin(th)*r,ph:rnd()*TAU,s:.5+rnd()*.7,c:rnd()})}
+const NEB=[];for(let i=0;i<10;i++)NEB.push({a:rnd()*TAU,d:.15+rnd()*.6,r:.35+rnd()*.5,h:[350,335,10,200,320][i%5],w:(rnd()-.5)*.4});
+const RING=[];for(let i=0;i<60;i++)RING.push({a:i/60*TAU,ph:rnd()*TAU});
+const PLEI=[[-.6,-.25,1],[-.15,-.45,.8],[.2,-.1,1.15],[.55,-.3,.75],[.1,.35,.9],[-.35,.25,.7],[.7,.25,.65],[-.05,.0,.55],[.4,.55,.5]];
+
+/* ---------- 천체 목록 ---------- */
+// x,y: 16×9 기준 위치 · ext: 번호를 띄울 높이(R 배수)
+const OBJ=[
+ {k:'saturn', x:2.6,y:2.9,ext:2.2,name:'토성',ex:'행성'},
+ {k:'jupiter',x:6.4,y:2.1,ext:1.9,name:'목성',ex:'행성 · 갈릴레이 위성 4개'},
+ {k:'gal',    x:10.3,y:2.6,ext:2.4,name:'나선 은하',ex:'예: 안드로메다 은하'},
+ {k:'bar',    x:14.0,y:3.1,ext:2.3,name:'막대 나선 은하',ex:'예: 우리 은하'},
+ {k:'ell',    x:1.9,y:5.9,ext:2.1,name:'타원 은하',ex:'예: M87'},
+ {k:'irr',    x:5.6,y:4.9,ext:2.0,name:'불규칙 은하',ex:'예: 대마젤란 은하'},
+ {k:'ringneb',x:8.6,y:4.6,ext:1.7,name:'고리 성운',ex:'행성상 성운 · M57'},
+ {k:'emis',   x:12.1,y:5.3,ext:2.3,name:'방출 성운',ex:'예: 오리온 대성운'},
+ {k:'dark',   x:14.6,y:6.6,ext:2.0,name:'암흑 성운',ex:'예: 말머리 성운'},
+ {k:'plei',   x:3.9,y:7.4,ext:1.9,name:'산개 성단',ex:'플레이아데스 · 파란 반사 성운'},
+ {k:'glob',   x:7.6,y:7.0,ext:1.7,name:'구상 성단',ex:'예: M13'},
+ {k:'double', x:10.6,y:7.5,ext:1.4,name:'이중성',ex:'예: 알비레오'},
+ {k:'comet',  x:12.6,y:1.15,ext:1.6,name:'혜성',ex:'꼬리는 태양 반대쪽'},
+];
+
+function geo(){const m=Math.min(W/16,H/8.4),ox=(W-m*16)/2,oy=(H-m*8.4)/2;return{P:(x,y)=>[ox+x*m,oy+y*m*.93]}}
+
+/* ---------- 도우미 ---------- */
+function glow(x,y,r,col,a){if(r<=0)return;const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,col.replace('A',a));g.addColorStop(1,col.replace('A',0));ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill()}
+function dot(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill()}
+const px=()=>1/DPR;
+
+/* ---------- 배경 ---------- */
+function sky(t){
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#01020a');g.addColorStop(.6,'#040820');g.addColorStop(1,'#0a1030');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const drift=t*.003;
+  for(const p of MW){const u=(p.u+drift)%1;ctx.fillStyle=`rgba(200,210,255,${p.a*.35})`;ctx.fillRect(u*W*1.2-W*.1,H*(.95-u*.9)+p.g*H,p.s,p.s)}
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<7;i++){const u=((i/7)+drift)%1;glow(u*W*1.2-W*.1,H*(.95-u*.9),H*.2,'rgba(80,90,160,A)',.05)}
+  ctx.restore();
+  for(const s of STARS){
+    const x=((s.x+drift*.6)%1)*W,y=s.y*H,tw=.55+.45*Math.sin(t*s.f+s.ph);
+    const col=s.c<.15?'255,214,170':s.c<.3?'180,205,255':'255,255,255';
+    const r=s.s*.75*(.8+.3*tw);
+    if(s.s>1)glow(x,y,r*4,`rgba(${col},A)`,.18*tw);
+    dot(x,y,r,`rgba(${col},${(.3+.6*tw)*(s.s>1?1:.7)})`);
+  }
+}
+let meteors=[],nextMet=3;
+function meteor(t){
+  if(t>nextMet){meteors.push({t0:t,x:W*(.1+Math.random()*.8),y:H*(.03+Math.random()*.35),a:.4+Math.random()*.6,l:H*(.2+Math.random()*.2),d:.8+Math.random()*.6});nextMet=t+5+Math.random()*7}
+  meteors=meteors.filter(m=>t-m.t0<m.d&&t>=m.t0);
+  for(const m of meteors){const k=(t-m.t0)/m.d,e=1-Math.pow(1-k,2),a=Math.sin(k*Math.PI);
+    const hx=m.x+Math.cos(m.a)*m.l*e*1.6,hy=m.y+Math.sin(m.a)*m.l*e*1.6,tx=hx-Math.cos(m.a)*m.l*.5,ty=hy-Math.sin(m.a)*m.l*.5;
+    const g=ctx.createLinearGradient(tx,ty,hx,hy);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,`rgba(255,255,255,${a})`);
+    ctx.strokeStyle=g;ctx.lineWidth=H*.0025;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(hx,hy);ctx.stroke();glow(hx,hy,H*.01,'rgba(255,255,230,A)',a)}
+}
+
+/* ---------- 천체 그리기 (R = 기본 반지름) ---------- */
+const D={};
+D.saturn=(x,y,R,t)=>{
+  const r=R*.75,k=.3+.07*Math.sin(t*.25),tilt=-.35;
+  const ring=front=>{for(const [a,b,c] of [[1.35,1.6,'rgba(170,150,115,.6)'],[1.6,1.95,'rgba(228,208,162,.95)'],[1.95,2.03,'rgba(10,10,20,.9)'],[2.03,2.3,'rgba(205,185,145,.85)']]){ctx.strokeStyle=c;ctx.lineWidth=(b-a)*r;const m=(a+b)/2*r;ctx.beginPath();ctx.ellipse(x,y,m,m*k,tilt,front?0:Math.PI,front?Math.PI:TAU);ctx.stroke()}};
+  glow(x,y,r*3,'rgba(255,220,160,A)',.1);ring(false);
+  ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.clip();
+  const g=ctx.createLinearGradient(x,y-r,x,y+r);[['#c9a66b',0],['#ecd39c',.3],['#d6b679',.5],['#f0dcae',.6],['#a88a55',1]].forEach(([c,s])=>g.addColorStop(s,c));
+  ctx.fillStyle=g;ctx.fillRect(x-r,y-r,2*r,2*r);
+  const sh=ctx.createRadialGradient(x-r*.35,y-r*.35,r*.2,x,y,r*1.05);sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(0,0,0,.5)');ctx.fillStyle=sh;ctx.fillRect(x-r,y-r,2*r,2*r);
+  ctx.restore();ring(true);
+};
+D.jupiter=(x,y,R,t)=>{
+  const r=R*.85;
+  const moons=[[2.0,1.7],[2.8,1.15],[3.9,.75],[5.4,.42]].map(([a,w],i)=>{const ang=t*w*.3+i*1.9;return{x:x+Math.cos(ang)*a*r,y:y+Math.sin(ang)*a*r*.05,back:Math.sin(ang)<0}});
+  const dm=m=>{glow(m.x,m.y,r*.35,'rgba(255,245,220,A)',.3);dot(m.x,m.y,Math.max(.8,r*.1),'#fbf3df')};
+  moons.filter(m=>m.back).forEach(dm);
+  glow(x,y,r*2,'rgba(255,215,170,A)',.12);
+  ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.clip();
+  ctx.fillStyle='#ead5b5';ctx.fillRect(x-r,y-r,2*r,2*r);
+  for(const [cy,h,c] of [[-.72,.14,'#b98a5e'],[-.4,.16,'#c99a6c'],[-.12,.2,'#a8714a'],[.22,.2,'#a8714a'],[.55,.14,'#c4956a']]){
+    ctx.fillStyle=c;ctx.beginPath();const yy=y+cy*r,hh=h*r;ctx.moveTo(x-r,yy-hh/2);
+    for(let i=0;i<=16;i++)ctx.lineTo(x-r+i/16*2*r,yy-hh/2+Math.sin(i*1.1+t*.7+cy*5)*hh*.2);
+    for(let i=16;i>=0;i--)ctx.lineTo(x-r+i/16*2*r,yy+hh/2+Math.sin(i*.9-t*.6+cy*3)*hh*.2);ctx.fill()}
+  ctx.fillStyle='#d9825a';ctx.beginPath();ctx.ellipse(x+r*.3+Math.sin(t*.15)*r*.06,y+r*.32,r*.26,r*.14,0,0,TAU);ctx.fill();
+  const sh=ctx.createRadialGradient(x-r*.35,y-r*.35,r*.2,x,y,r*1.05);sh.addColorStop(0,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(0,0,0,.5)');ctx.fillStyle=sh;ctx.fillRect(x-r,y-r,2*r,2*r);
+  ctx.restore();moons.filter(m=>!m.back).forEach(dm);
+};
+function drawSpiral(x,y,R,t,pts,tiltY,rot,spin,bar){
+  const s=R*2.1,ca=Math.cos(rot),sa=Math.sin(rot);
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  glow(x,y,s*1.05,'rgba(120,140,230,A)',.12);
+  for(const p of pts){
+    let lx,ly;
+    if(p.core){lx=Math.cos(p.th)*p.r+(p.bx||0);ly=Math.sin(p.th)*p.r*(bar?.45:1)}
+    else{const th=p.th+spin*(1.2-p.r*.6);lx=Math.cos(th)*p.r;ly=Math.sin(th)*p.r}
+    if(bar&&p.core){const c=Math.cos(spin),sn=Math.sin(spin);const ux=lx*c-ly*sn,uy=lx*sn+ly*c;lx=ux;ly=uy}
+    ly*=tiltY;
+    const X=x+(lx*ca-ly*sa)*s,Y=y+(lx*sa+ly*ca)*s;
+    const c=p.core?'255,236,200':p.hii?'255,130,180':'170,195,255';
+    ctx.fillStyle=`rgba(${c},${p.core?.5:p.hii?.8:.42})`;const z=p.core?1.3:p.hii?1.2:.95;ctx.fillRect(X,Y,z,z);
+  }
+  glow(x,y,s*.33,'rgba(255,235,190,A)',.75);glow(x,y,s*.12,'rgba(255,250,235,A)',.9);
+  ctx.restore();
+}
+D.gal=(x,y,R,t)=>drawSpiral(x,y,R*1.05,t,GAL_A,.36,-.55,t*.08,false);
+D.bar=(x,y,R,t)=>drawSpiral(x,y,R*.95,t,GAL_B,.85,.2,t*.1,true);
+D.ell=(x,y,R,t)=>{
+  ctx.save();ctx.translate(x,y);ctx.rotate(.5);ctx.scale(1,.68);
+  const s=R*1.7,g=ctx.createRadialGradient(0,0,0,0,0,s);
+  g.addColorStop(0,'rgba(255,245,220,.95)');g.addColorStop(.15,'rgba(255,225,180,.65)');g.addColorStop(.45,'rgba(230,190,150,.22)');g.addColorStop(1,'rgba(200,160,130,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,s,0,TAU);ctx.fill();ctx.restore();
+  for(let i=0;i<7;i++){const a=t*.12*(i%2?1:-1)+i*.9,d=R*(1.4+i*.18);dot(x+Math.cos(a)*d,y+Math.sin(a)*d*.6,.8,'rgba(255,230,190,.7)')}
+};
+D.irr=(x,y,R,t)=>{
+  const s=R*2;ctx.save();ctx.globalCompositeOperation='lighter';
+  IRR_C.forEach(([cx,cy],i)=>glow(x+cx*s,y+cy*s,s*.45,'rgba(140,160,235,A)',.07+.02*Math.sin(t*.6+i)));
+  for(const p of IRR){const [cx,cy]=IRR_C[p.c];const X=x+(cx*.8+p.x*1.5+Math.sin(t*.1+p.c)*.02)*s,Y=y+(cy*.8+p.y*1.5)*s;
+    if(p.hii){glow(X,Y,2,'rgba(255,90,160,A)',.45+.2*Math.sin(t*1.5+p.x*9))}else{ctx.fillStyle='rgba(175,195,255,.38)';ctx.fillRect(X,Y,1,1)}}
+  ctx.restore();
+};
+D.ringneb=(x,y,R,t)=>{
+  const a=R*.95,b=R*.75;ctx.save();ctx.globalCompositeOperation='lighter';
+  glow(x,y,a*1.5,'rgba(255,90,90,A)',.12);
+  for(const p of RING){const r1=1+.08*Math.sin(t*.9+p.ph);const X=x+Math.cos(p.a+t*.03)*a*r1,Y=y+Math.sin(p.a+t*.03)*b*r1;glow(X,Y,a*.42,'rgba(255,110,80,A)',.2);glow(X*.0+x+(X-x)*.8,y+(Y-y)*.8,a*.3,'rgba(90,230,210,A)',.13)}
+  glow(x,y,a*.5,'rgba(80,200,230,A)',.18);
+  ctx.restore();dot(x,y,.9,'#ffffff');
+};
+D.emis=(x,y,R,t)=>{
+  const r=R*1.6;ctx.save();ctx.globalCompositeOperation='lighter';
+  for(const b of NEB){const a=b.a+t*b.w*.25,X=x+Math.cos(a)*b.d*r,Y=y+Math.sin(a)*b.d*r*.8;glow(X,Y,b.r*r,`hsla(${b.h},85%,58%,A)`,.2+.06*Math.sin(t*.5+b.a))}
+  glow(x,y,r*.4,'rgba(255,235,245,A)',.4);
+  ctx.restore();
+    for(let i=0;i<4;i++){const a=i*1.57+.4;dot(x+Math.cos(a)*r*.09,y+Math.sin(a)*r*.07,.9,'#fff')}
+};
+D.dark=(x,y,R,t)=>{
+  const r=R*1.6;ctx.save();ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<7;i++){const X=x+(i-3)*r*.3,Y=y-r*.1+Math.sin(i*1.7)*r*.12;glow(X,Y,r*.7,'rgba(255,55,85,A)',.3+.07*Math.sin(t*.7+i))}
+  ctx.restore();
+  // 말머리 모양의 어두운 구름
+  ctx.save();ctx.translate(x+r*.05,y+r*.25);const k=r*.55;
+  const g=ctx.createLinearGradient(0,-k,0,k*1.5);g.addColorStop(0,'rgba(8,4,12,.95)');g.addColorStop(1,'rgba(8,4,12,.75)');ctx.fillStyle=g;
+  ctx.beginPath();ctx.moveTo(-k*1.6,k*1.4);ctx.lineTo(-k*.35,k*1.3);ctx.lineTo(-k*.25,k*.3);
+  ctx.quadraticCurveTo(-k*.75,k*.05,-k*.55,-k*.45);ctx.quadraticCurveTo(-k*.2,-k*1.05,k*.25,-k*.75);
+  ctx.lineTo(k*.3,-k*1.15);ctx.lineTo(k*.45,-k*.7);ctx.quadraticCurveTo(k*.75,-k*.2,k*.45,k*.35);ctx.lineTo(k*.55,k*1.3);ctx.lineTo(k*1.8,k*1.4);ctx.closePath();ctx.fill();
+  ctx.restore();
+  dot(x-r*.9,y-r*.5,1.1,'#fff6e8');glow(x-r*.9,y-r*.5,r*.25,'rgba(255,240,220,A)',.4);
+};
+D.plei=(x,y,R,t)=>{
+  const s=R*1.5;ctx.save();ctx.globalCompositeOperation='lighter';
+  glow(x,y,s*1.3,'rgba(90,140,255,A)',.16);
+  PLEI.forEach(([a,b,m],i)=>{const X=x+a*s,Y=y+b*s,tw=.8+.2*Math.sin(t*1.6+i*2.1);glow(X,Y,s*.38*m,'rgba(120,160,255,A)',.28*tw);dot(X,Y,Math.max(.8,m*s*.07),`rgba(235,242,255,${.85*tw})`)});
+  ctx.restore();
+};
+D.glob=(x,y,R,t)=>{
+  const s=R*1.25;glow(x,y,s*1.1,'rgba(255,230,190,A)',.35);glow(x,y,s*.35,'rgba(255,245,225,A)',.7);
+  for(const p of GLOB){const tw=.65+.35*Math.sin(t*2+p.ph);ctx.fillStyle=p.c<.25?`rgba(255,200,150,${.7*tw})`:`rgba(255,250,235,${.75*tw})`;ctx.fillRect(x+p.x*s,y+p.y*s,p.s,p.s)}
+};
+D.double=(x,y,R,t)=>{
+  const d=R*.38,a=.6;const tw=.85+.15*Math.sin(t*2.3);
+  const A=[x-Math.cos(a)*d,y-Math.sin(a)*d],B=[x+Math.cos(a)*d,y+Math.sin(a)*d];
+  glow(A[0],A[1],R*.5,'rgba(255,190,90,A)',.45*tw);dot(A[0],A[1],1.3,'#ffe2b0');
+  glow(B[0],B[1],R*.35,'rgba(110,160,255,A)',.45*tw);dot(B[0],B[1],1,'#d8e6ff');
+};
+D.comet=(x0,y0,R,t)=>{
+  const x=x0+Math.sin(t*.05)*R*3,y=y0+Math.cos(t*.05)*R*.6;
+  const ang=Math.PI*.92,L=R*7;
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<14;i++){const k=i/14,w=Math.sin(t*1.3+i*.6)*R*.08*k;const X=x+Math.cos(ang)*L*k+Math.cos(ang+1.57)*w,Y=y+Math.sin(ang)*L*k+Math.sin(ang+1.57)*w;glow(X,Y,R*(.35+k*1.1),'rgba(170,220,255,A)',.16*(1-k))}
+  for(let i=0;i<10;i++){const k=i/10;glow(x+Math.cos(ang-.18)*L*.8*k,y+Math.sin(ang-.18)*L*.8*k,R*(.3+k*.8),'rgba(255,240,200,A)',.1*(1-k))}
+  glow(x,y,R*.7,'rgba(210,255,240,A)',.7);ctx.restore();dot(x,y,1.2,'#ffffff');
+  return [x,y];
+};
+
+/* ---------- 번호·정답 ---------- */
+function badge(x,y,n){
+  const r=H*.022;ctx.save();
+  ctx.strokeStyle='rgba(255,215,90,.9)';ctx.lineWidth=H*.0035;ctx.fillStyle='rgba(10,12,30,.6)';
+  ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill();ctx.stroke();
+  ctx.font=`900 ${r*(n>9?1.15:1.35)}px 'Noto Sans KR'`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#ffe27a';ctx.fillText(n,x,y+r*.07);
+  ctx.restore();
+}
+function answer(x,y,name,ex){
+  const s=H*.032;ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font=`900 ${s}px 'Noto Sans KR'`;const w1=ctx.measureText(name).width;ctx.font=`700 ${s*.58}px 'Noto Sans KR'`;const w2=ctx.measureText(ex).width;
+  const w=Math.max(w1,w2)+s*.9,h=s*2.15;
+  ctx.fillStyle='rgba(255,210,60,.95)';ctx.beginPath();ctx.roundRect(x-w/2,y,w,h,s*.3);ctx.fill();
+  ctx.fillStyle='#1b1300';ctx.font=`900 ${s}px 'Noto Sans KR'`;ctx.fillText(name,x,y+s*.72);
+  ctx.font=`700 ${s*.58}px 'Noto Sans KR'`;ctx.fillStyle='#4a3a00';ctx.fillText(ex,x,y+s*1.65);ctx.restore();
+}
+function hud(){
+  ctx.save();ctx.textBaseline='top';ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=H*.012;
+  ctx.font=`900 ${H*.05}px 'Noto Sans KR'`;ctx.fillStyle='#fff';ctx.fillText('🔭 가상 밤하늘 관측소',H*.03,H*.025);
+  ctx.textBaseline='bottom';ctx.font=`700 ${H*.03}px 'Noto Sans KR'`;ctx.fillStyle='#cdd6ff';
+  ctx.fillText('망원경으로 관측하고, 무엇인지 맞혀 보세요!',H*.03,H*.935);
+  ctx.font=`700 ${H*.026}px 'Noto Sans KR'`;ctx.fillStyle='#9fb0ee';
+  ctx.fillText('보기:  행성 · 은하(나선·막대 나선·타원·불규칙) · 성운(방출·암흑·고리) · 성단(산개·구상) · 이중성 · 혜성',H*.03,H*.978);
+  ctx.textAlign='right';ctx.font=`500 ${H*.016}px 'Noto Sans KR'`;ctx.fillStyle='rgba(200,210,255,.5)';
+  ctx.fillText('제작: 과학교사 구인회 · v1.1 (2026.11.26)',W-H*.02,H*.935);
+  ctx.restore();
+}
+
+/* ---------- 반복 ---------- */
+let last=performance.now(),T=0;
+function frame(now){
+  const dt=Math.min(.1,(now-last)/1000);last=now;T+=dt*SPEEDS[cfg.speed];
+  const t=T,g=geo(),R=H*.011*SCALES[cfg.size-1];
+  sky(t);meteor(t);
+  const spots=OBJ.map(o=>{let [x,y]=g.P(o.x,o.y);const r=D[o.k](x,y,R,t);if(r)[x,y]=r;return[x,y]});
+  OBJ.forEach((o,i)=>{const [x,y]=spots[i],off=Math.max(o.ext*R,H*.012)+H*.035;
+    if(cfg.num)badge(x,y-off,i+1);
+    if(showAns)answer(x,y+Math.max(o.ext*R*.8,H*.015)+H*.012,o.name,o.ex)});
+  hud();
+  requestAnimationFrame(frame);
+}
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',resize);resize();
+
+/* ---------- 설정 ---------- */
+const $=id=>document.getElementById(id);
+const ICON_ANS='<svg class="ic" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>';
+const ICON_HIDE='<svg class="ic" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/><path d="M4 20 20 4"/></svg>';
+function ui(){
+  $('inSize').value=cfg.size;$('inNum').checked=cfg.num;$('inSpeed').value=cfg.speed;
+  $('szV').textContent=cfg.size+' / 10';$('spV').textContent=SPEED_NAMES[cfg.speed];
+  $('ansBtn').innerHTML=(showAns?ICON_HIDE:ICON_ANS);$('ansBtn').classList.toggle('on',showAns);
+}
+$('inSize').oninput=e=>{cfg.size=+e.target.value;save();ui()};
+$('inNum').onchange=e=>{cfg.num=e.target.checked;save()};
+$('inSpeed').oninput=e=>{cfg.speed=+e.target.value;save();ui()};
+function setToggle(){$('setBtn').classList.toggle('on',$('panel').classList.toggle('show'))}
+$('setBtn').onclick=setToggle;
+$('ansBtn').onclick=()=>{showAns=!showAns;ui()};
+const de=document.documentElement;
+function fs(){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else if(de.requestFullscreen)de.requestFullscreen().catch(()=>{})}
+$('fsBtn').onclick=fs;if(!de.requestFullscreen)$('fsBtn').style.display='none';
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key.toLowerCase();
+  if(k==='a'){showAns=!showAns;ui()}else if(k==='s')setToggle();else if(k==='f')fs();else if(k==='n'){cfg.num=!cfg.num;save();ui()}
+});
+let idleT;function wake(){document.body.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>{if(!$('panel').classList.contains('show'))document.body.classList.add('idle')},3000)}
+addEventListener('pointermove',wake);addEventListener('pointerdown',wake);wake();
+ui();
+window.__sky={OBJ,setT:v=>{T=v}};
+(document.fonts?document.fonts.load("900 20px 'Noto Sans KR'"):Promise.resolve()).finally(()=>requestAnimationFrame(frame));
+</script>
+</body>
+</html>
