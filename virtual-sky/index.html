@@ -69,10 +69,11 @@ body.m-sky #stage{display:none}
 
 .q{position:absolute;width:var(--d);height:var(--d);transform:translate(-50%,-50%)}
 .disc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transition:transform .5s}
-.disc.c{border-radius:50%;background:#222a35;border:calc(var(--d)*.012) solid #2f528f}
+/* 글자 퀴즈: 배경 없이 글자만, 별빛처럼 은은하게 빛나는 또렷한 글자 */
+.disc.c{background:transparent;border:0}
 body.flip .disc{transform:rotate(180deg)}
 .disc img{width:100%;height:100%;object-fit:contain;display:block}
-.clue{color:#aeabab;font-weight:500;font-size:calc(var(--d)*.078);line-height:1.28;text-align:center;padding:0 9%;word-break:keep-all}
+.clue{color:#eef2ff;font-weight:700;font-size:calc(var(--d)*.082);line-height:1.32;letter-spacing:.01em;text-align:center;padding:0 4%;word-break:keep-all;text-shadow:0 0 calc(var(--d)*.02) rgba(150,180,255,.75),0 0 calc(var(--d)*.06) rgba(110,140,255,.35)}
 .no{display:none}
 body.num .clue .no{display:block}
 .pno{position:absolute;left:50%;top:0;transform:translate(-50%,-115%);width:4.4vh;height:4.4vh;border-radius:50%;border:.35vh solid rgba(255,215,90,.9);background:rgba(10,12,30,.6);color:#ffe27a;font-weight:900;font-size:2.8vh;align-items:center;justify-content:center}
@@ -106,6 +107,7 @@ body.m-sky #empty{display:none!important}
   .pp .phd{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;font-size:11pt;font-weight:700;color:#333}
   .pp .pfield{position:absolute;left:0;right:0;top:12mm;bottom:8mm}
   .pp .ans{display:none!important}
+  .pp .clue{color:#000;text-shadow:none}
   .pp .pno{width:7mm;height:7mm;font-size:4.5mm;border:.5mm solid #000;background:#fff;color:#000;transform:translate(-50%,-120%)}
   .pp .pft{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:9pt;color:#666}
   .key{font-size:12pt;color:#000}
@@ -121,7 +123,7 @@ body.m-sky #empty{display:none!important}
 
 <div class="hud" id="hTop"><h1 id="ttl"></h1><div class="sub" id="sub"></div></div>
 <div class="hud" id="hBot"><div class="l1">망원경으로 관찰하고, 무엇인지 맞혀 보세요!</div><div class="l2" id="hint"></div></div>
-<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.2 (2026.11.27)</div>
+<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.3 (2026.11.27)</div>
 
 <div id="tabs">
   <button class="tab" data-m="sky">🌌 가상 밤하늘</button>
