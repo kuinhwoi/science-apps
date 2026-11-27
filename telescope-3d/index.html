@@ -156,7 +156,7 @@ html,body{margin:0;height:100%;background:#e8e2d4;color:var(--ink);font-family:'
       <div class="mode box"><div class="k">PART</div><div class="mode-v" id="modeV">도안</div><div class="mode-s" id="modeS">STEP 01 / 22</div></div>
       <div class="tools box"><div class="k">TOOLS · 도구</div><div id="toolList"></div></div>
     </div>
-    <div class="hint"><span class="key-only">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 · S: 소리 · F: 전체화면 · H: 설명 접기 &nbsp;|&nbsp; </span><span class="touch-only">한 손가락: 돌리기 · 두 손가락: 확대 <br></span>제작: 과학교사 구인회, 노정현 · v1.4 (2026.11.23)</div>
+    <div class="hint"><span class="key-only">드래그: 회전 · 휠: 확대 · ←/→: 단계 이동 · Space: 다시 보기 · S: 소리 · F: 전체화면 · H: 설명 접기 &nbsp;|&nbsp; </span><span class="touch-only">한 손가락: 돌리기 · 두 손가락: 확대 <br></span>제작: 과학교사 구인회, 노정현 · v1.5 (2026.11.27)</div>
     <div class="vbtns"><button id="sndBtn" class="pill on" title="소리 켜기/끄기 (S)">🔊<span class="pt"> 소리</span></button><button id="xrayBtn" class="pill">속 보기</button><button id="lblBtn" class="pill on">라벨</button><button id="fsBtn" class="pill" title="전체화면 (F)"></button></div>
   </div>
   <div id="panel">
@@ -645,17 +645,24 @@ const STEPS=[
     if(t<.21)L('ㄱ자로 양면테이프',cx+14,.3,-8.8,'warn big');
     L('⑥ 경통',cx+(1-p)*14+2,.3,6,'big');if(t>.32)L('접안부',cx,cy+(1-d)*10+4,-12);if(t>.32&&t<.78)L('고리를 가장자리에 맞춰',cx,cy+(1-d)*10+P5.outer+.3,-7.5,'warn');if(t>.9)L('위·아래 지름이 같게!',cx,cy+4.3,4,'warn big')}},
  {g:'C',short:'렌즈 틈',title:'렌즈 들어갈 틈 만들기',fig:'⑦ 대물렌즈 셀 9 × 30cm · ⑧ 렌즈 고정용 2장',
-  body:'⑧번 2장에 <b>양면테이프</b>를 길게 붙이고 ⑦번 <b>모서리에 맞춰</b> 나란히 붙이면, 가운데에 대물렌즈가 들어갈 <b>틈</b>이 생겨요.',
-  tools:['양면테이프'],dur:9.5,rot:PI/2,cam:{p:[-40,32,6],t:[-3,1,0]},
-  apply(t){const cx=-20,ta=seg(t,0,.28),ea=seg(t,.3,.4),eb=seg(t,.41,.51),j=ease(seg(t,.54,.84));
+  body:'⑧번 2장을 <b>뒤집어 매끈한 면</b>에 양면테이프를 길게 붙이고, <b>다시 뒤집어</b> ⑦번 <b>모서리에 맞춰</b> 나란히 붙이면, 가운데에 대물렌즈가 들어갈 <b>틈</b>이 생겨요.',
+  tools:['양면테이프'],dur:12.5,rot:PI/2,cam:{p:[-40,32,6],t:[-3,1,0]},
+  apply(t){const cx=-20,f1=ease(seg(t,0,.13)),ta=seg(t,.15,.39),ea=seg(t,.41,.49),eb=seg(t,.5,.58),f2=ease(seg(t,.61,.73)),j=ease(seg(t,.75,.92));
     P7.setDecor({nums:[{t:'7',s:27,w:4.5,r:1.1,rot:1}]});flat(P7,cx,0);
     const E={s0:.3,s1:24.2,w0:1.15,w1:3.05},tp=(k,pe)=>[Object.assign({p:clamp(ta*2-k,0,1),peel:pe},E)];
     P8a.setDecor({nums:[{t:'8',s:12,w:2.1,r:1.1,rot:1}],tapes:tp(0,ea)});P8b.setDecor({nums:[{t:'8',s:12,w:2.1,r:1.1,rot:1}],tapes:tp(1,eb)});
-    flat(P8a,cx,lerp(-12,-2.4,j),.07);flat(P8b,cx,lerp(12,2.4,j),.07);peelL(P8a,E,ea);peelL(P8b,E,eb);
+    // 처음엔 골 면이 위 → 뒤집어 매끈한 면을 위로(f1) → 테이프·비닐 → 다시 뒤집어 테이프 면을 아래로(f2) → ⑦에 붙이기(j)
+    const rot=PI*(1-f1)+PI*f2,lift=Math.sin(f1*PI)*3.2+Math.sin(f2*PI)*3.2,za=lerp(-12,-2.4,j),zb=lerp(12,2.4,j);
+    for(const [P,z] of [[P8a,za],[P8b,zb]]){flat(P,cx,z,.07);P.group.rotation.x=rot;P.group.position.y=.07+lift}
+    peelL(P8a,E,ea);peelL(P8b,E,eb);
     if(ta>0&&ta<1){rollAxis(tapeRoll,'z');const k=ta<.5?0:1,q=clamp(ta*2-k,0,1);show(tapeRoll,cx+.3+23.9*q,.1,k?12:-12)}
     placeScope(17,SCY,-9,0,false);
-    L('⑦',cx+27,.3,0,'big');if(t<.3||t>.52){L('⑧',cx+12,.4,lerp(-12,-2.4,j)-2.4,'big');L('⑧',cx+12,.4,lerp(12,2.4,j)+2.4,'big')}
-    if(t>.86){L('렌즈 들어갈 틈',cx+4,.3,0,'warn big');L('모서리에 맞춰',cx+24.5,.3,-4.5)}L('경통',17,8.6,0)}},
+    L('⑦',cx+27,.3,0,'big');if(t<.14||t>.59){L('⑧',cx+12,.4+lift,za-2.4,'big');L('⑧',cx+12,.4+lift,zb+2.4,'big')}
+    if(t<.14)L('뒤집기',cx+12,lift+2.2,0,'warn big');
+    if(ta>0&&ta<1)L('매끈한 면에 양면테이프',cx+12,.4,0,'warn big');
+    if(t>.59&&t<.75)L('다시 뒤집기',cx+12,lift+2.2,0,'warn big');
+    if(t>.74&&t<.93)L('⑦ 모서리에 맞춰 붙이기',cx+12,.4,0,'warn');
+    if(t>.93){L('렌즈 들어갈 틈',cx+4,.3,0,'warn big');L('모서리에 맞춰',cx+24.5,.3,-4.5)}L('경통',17,8.6,0)}},
  {g:'C',short:'대물렌즈',title:'대물렌즈 넣고 말기',fig:'대물렌즈 7.5cm · ⑦ 대물렌즈 셀',
   body:'대물렌즈(7.5cm)를 틈 가운데에 <b>수직으로</b> 넣고 돌돌 말아, <b>끝을 양면테이프로</b> 고정해요.',
   warn:'대물렌즈가 기울면 상이 흐려져요. 가운데 수직으로!',tools:['대물렌즈 7.5cm','양면테이프'],dur:9.5,rot:PI/2,cam:{p:[-38,20,8],t:[-10,3,0]},
@@ -757,7 +764,7 @@ const SFX=(()=>{const X={},c=(a,s,b)=>({a,s,b});
   X[16]=[c(.04,'roll',.72),c(.74,'tape',.82),c(.83,'peel',.92),c(.93,'roll',.995)];
   X[17]=[c(.02,'tape',.26),c(.28,'peel',.44),c(.5,'roll',.96),c(.96,'chime')];
   X[18]=[c(0,'tape',.11),c(.11,'tape',.2),c(.21,'peel',.31),c(.42,'thud'),c(.44,'roll',.78),c(.79,'peel',.88),c(.89,'roll',.98)];
-  X[19]=[c(0,'tape',.14),c(.14,'tape',.28),c(.3,'peel',.4),c(.41,'peel',.51),c(.54,'slide',.84),c(.84,'thud')];
+  X[19]=[c(.01,'slide',.12),c(.12,'thud'),c(.15,'tape',.27),c(.27,'tape',.39),c(.41,'peel',.49),c(.5,'peel',.58),c(.61,'slide',.72),c(.73,'thud'),c(.75,'slide',.92),c(.92,'thud')];
   X[20]=[c(.22,'tink'),c(.24,'tape',.36),c(.39,'roll',.77),c(.78,'peel',.87),c(.88,'roll',.98)];
   X[21]=[c(0,'slide',.08),c(.08,'thud'),...[0,1,2,3].map(i=>c(.1+i*.065,'etape',.16+i*.065)),...[0,1,2].map(i=>c(.38+i*.13,'glue')),c(.8,'chime'),c(.82,'slide',.98)];
   return X})();
