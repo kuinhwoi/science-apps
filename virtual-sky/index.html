@@ -121,7 +121,7 @@ body.m-sky #empty{display:none!important}
 
 <div class="hud" id="hTop"><h1 id="ttl"></h1><div class="sub" id="sub"></div></div>
 <div class="hud" id="hBot"><div class="l1">망원경으로 관찰하고, 무엇인지 맞혀 보세요!</div><div class="l2" id="hint"></div></div>
-<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.0 (2026.11.27)</div>
+<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.1 (2026.11.27)</div>
 
 <div id="tabs">
   <button class="tab" data-m="sky">🌌 가상 밤하늘</button>
@@ -172,21 +172,20 @@ body.m-sky #empty{display:none!important}
 
   <div class="sec s-q">
     <h4>보여 줄 퀴즈</h4>
-    <div class="row s-baseonly"><input type="checkbox" id="inBase"> 기본 문제(7장)도 함께 내기</div>
     <small>눌러서 켜고 끌 수 있어요.</small>
     <div class="chips" id="chips"></div>
   </div>
 
   <div class="sec s-photo">
     <h4>사진 직접 추가</h4>
-    <small>구글 시트 말고 이 컴퓨터의 사진을 바로 넣을 수도 있어요. 인물·물건 사진을 넣으면 5장씩 퀴즈가 만들어져요. 이름 칸이 정답이 돼요. 사진은 이 컴퓨터 브라우저에만 저장돼요.</small>
+    <small>구글 시트 말고 이 컴퓨터의 사진을 바로 넣을 수도 있어요. 인물·물건 사진을 넣으면 5장씩 한 장의 퀴즈가 만들어져요. 이름 칸이 정답이 돼요. 사진은 이 컴퓨터 브라우저에만 저장돼요.</small>
     <div class="prow"><button class="pbtn addPh">＋ 사진 고르기</button></div>
     <div id="plist"></div>
   </div>
 
   <div class="sec s-q">
     <h4>거꾸로 인쇄</h4>
-    <small>A4 가로 한 장에 5문제씩 뒤집혀 인쇄돼요. 위치는 인쇄할 때마다 새로 섞여요.</small>
+    <small>A4 가로 한 장에 한 묶음씩 뒤집혀 인쇄돼요. 위치는 인쇄할 때마다 새로 섞여요.</small>
     <label>인쇄 크기: <span id="psV"></span>
       <input type="range" id="inPSize" min="1" max="10" step="1"></label>
     <div class="row"><input type="checkbox" id="inKey"> 마지막 장에 정답표 넣기</div>
@@ -490,13 +489,13 @@ const CIRC='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
 /* 구글 시트에서 불러온 것 (마지막으로 불러온 내용을 저장해 두고, 인터넷이 안 될 때 씀) */
 let gs={text:[],photo:[],at:''};
 try{Object.assign(gs,JSON.parse(localStorage.getItem('telquiz.gs')||'{}'))}catch(e){}
-/* 묶음 이름별로 모아서 5개씩 한 장 */
+/* 묶음 이름별로 모으기 */
 function group(rows,mk,hintFn,prefix){
   const order=[],by={};
   rows.forEach(r=>{const g=r.g||prefix;if(!by[g]){by[g]=[];order.push(g)}by[g].push(mk(r))});
   const out=[];
-  order.forEach(g=>{const its=by[g],n=Math.ceil(its.length/5);
-    for(let i=0;i<n;i++){const items=its.slice(i*5,i*5+5);out.push({id:'gs:'+g,cat:n>1?`${g} ${CIRC[i]||i+1}`:g,hint:hintFn(items),items,src:'sheet'})}});
+  /* 묶음 이름(제목)이 같으면 개수와 상관없이 모두 한 장에 */
+  order.forEach(g=>{const items=by[g];out.push({id:'gs:'+g,cat:g,hint:hintFn(items),items,src:'sheet'})});
   return out;
 }
 const keyOf=s=>s.cat+'|'+s.items.map(i=>i.a+(i.img||'').slice(-40)).join(',');
@@ -505,7 +504,8 @@ function buildSlides(){
   const reuse=(m,s)=>{const o=m.get(keyOf(s));if(o){s._pos=o._pos;s._nums=o._nums;s._asp=o._asp}return s};
   const mt=keep('text'),mp=keep('photo');
   const tSheet=group(gs.text,r=>({a:r.a,lines:r.h}),its=>'보기: '+its.map(i=>i.a).join(' · '),'시트 문제');
-  ST.text.slides=[...(cfg.base?SETS:[]),...tSheet].filter(s=>!cfg.off.includes(s.id)).map(s=>reuse(mt,s));
+  /* 시트에 글자 문제가 있으면 시트 문제로, 없으면(인터넷이 안 되고 저장된 것도 없을 때) 앱에 든 기본 문제로 */
+  ST.text.slides=(tSheet.length?tSheet:SETS).filter(s=>!cfg.off.includes(s.id)).map(s=>reuse(mt,s));
   const pSheet=group(gs.photo,r=>({a:r.a,img:r.u}),()=>'누구일까요? 무엇일까요?','시트 사진');
   const pMine=[];for(let i=0;i<photos.length;i+=5){const n=i/5;pMine.push({cat:'내 사진 '+(CIRC[n]||n+1),hint:'누구일까요? 무엇일까요?',items:photos.slice(i,i+5).map(ph=>({a:ph.name||'?',img:ph.data}))})}
   ST.photo.slides=[...pSheet.filter(s=>!cfg.off.includes(s.id)),...pMine].map(s=>reuse(mp,s));
@@ -544,7 +544,7 @@ async function loadSheet(quiet){
   buildSlides();ui();render(false,false);
 }
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-function numbered(sl){if(!sl._nums||sl._nums.length!==sl.items.length)sl._nums=shuffle([1,2,3,4,5].slice(0,sl.items.length));return sl.items.map((it,i)=>({...it,n:sl._nums[i]}))}
+function numbered(sl){if(!sl._nums||sl._nums.length!==sl.items.length)sl._nums=shuffle(sl.items.map((_,i)=>i+1));return sl.items.map((it,i)=>({...it,n:sl._nums[i]}))}
 /* w×h 영역에 지름 d인 것 n개를 겹치지 않게 무작위로 (ans: 정답 칸 자리) */
 function scatter(n,w,h,d,ans){
   for(let pad=1.15;pad>=.85;pad-=.1){
@@ -561,7 +561,8 @@ function scatter(n,w,h,d,ans){
       if(ok)return pts;
     }
   }
-  return Array.from({length:n},(_,i)=>({x:w*((i%3)+.5)/3,y:h*(Math.floor(i/3)+.5)/2}));
+  const cols=Math.max(1,Math.ceil(Math.sqrt(n*w/Math.max(1,h)))),rows=Math.ceil(n/cols);
+  return Array.from({length:n},(_,i)=>({x:w*((i%cols)+.5)/cols,y:h*(Math.floor(i/cols)+.5)/rows}));
 }
 function qHTML(it,x,y,unit){
   if(it.img)return `<div class="q" style="left:${x}${unit};top:${y}${unit}"><div class="pno no">${it.n}</div><div class="disc"><img src="${it.img}" alt=""></div><div class="ans">${it.n}. ${esc(it.a)}</div></div>`;
@@ -594,7 +595,7 @@ function render(fade,fresh){
     const okPos=ps=>ps&&ps.length===its.length&&ps.every(q=>isFinite(q.fx)&&isFinite(q.fy)&&q.fx>=0&&q.fx<=1&&q.fy>=0&&q.fy<=1);
     st.style.setProperty('--d',d+'px');
     /* 위치는 7단계 크기 기준으로 한 번만 정해 두고(비율), 크기를 바꿔도 그대로 둠 */
-    const asp=w/h;if(fresh||!okPos(sl._pos)||!sl._asp||Math.abs(Math.log(asp/sl._asp))>.25){sl._asp=asp;const D=H*DS[6];const ans=its.map(it=>(String(it.a).length+3)*H*.034+H*.03);ans.h=H*.05;
+    const asp=w/h;if(fresh||!okPos(sl._pos)||!sl._asp||Math.abs(Math.log(asp/sl._asp))>.25){sl._asp=asp;const D=H*DS[6]*Math.min(1,Math.sqrt(5/its.length));const ans=its.map(it=>(String(it.a).length+3)*H*.034+H*.03);ans.h=H*.05;
       sl._pos=scatter(its.length,w,h,D,ans).map(p=>({fx:p.x/w,fy:p.y/h}))}
     st.innerHTML=its.map((it,i)=>qHTML(it,sl._pos[i].fx*w,sl._pos[i].fy*h,'px')).join('');
     $('sub').textContent=`${S.cur+1} / ${S.slides.length} · ${sl.cat}`;$('hint').textContent=sl.hint||'';
@@ -611,7 +612,8 @@ function doPrint(onlyCur){
   const list=onlyCur?[S.slides[S.cur]]:S.slides,d=PSIZES[cfg.psize-1],PW=281,PH=193-20-(cfg.num&&cfg.mode==='photo'?8:0);let h='';
   list.forEach(sl=>{const its=numbered(sl),pts=scatter(its.length,PW,PH,d,null);
     h+=`<section class="pp" style="--d:${d}mm"><div class="phd"><span>${esc(MODE_INFO[cfg.mode].ttl)} · ${esc(sl.cat)}</span><span>${esc(sl.hint||'')}</span></div><div class="pfield">${its.map((it,i)=>qHTML(it,pts[i].x,pts[i].y+(cfg.num&&it.img?8:0),'mm')).join('')}</div><div class="pft">거꾸로 인쇄되어 있어요. 망원경으로 보면 바로 보여요! · 제작: 과학교사 구인회</div></section>`});
-  if(cfg.key){h+=`<section class="pp key"><h2>정답표</h2><table><tr><th style="width:18%">퀴즈</th><th>1번</th><th>2번</th><th>3번</th><th>4번</th><th>5번</th></tr>${list.map(sl=>{const its=numbered(sl);return `<tr><td><b>${esc(sl.cat)}</b></td>${[1,2,3,4,5].map(n=>{const it=its.find(x=>x.n===n);return `<td>${it?esc(it.a):''}</td>`}).join('')}</tr>`}).join('')}</table></section>`}
+  if(cfg.key){const mx=Math.max(5,...list.map(sl=>sl.items.length)),ns=Array.from({length:mx},(_,i)=>i+1);
+    h+=`<section class="pp key"><h2>정답표</h2><table><tr><th style="width:16%">퀴즈</th>${ns.map(n=>`<th>${n}번</th>`).join('')}</tr>${list.map(sl=>{const its=numbered(sl);return `<tr><td><b>${esc(sl.cat)}</b></td>${ns.map(n=>{const it=its.find(x=>x.n===n);return `<td>${it?esc(it.a):''}</td>`}).join('')}</tr>`}).join('')}</table></section>`}
   $('printArea').innerHTML=h;
   const imgs=[...$('printArea').querySelectorAll('img')].map(im=>im.complete?null:new Promise(r=>{im.onload=im.onerror=r})).filter(Boolean);
   Promise.all(imgs).then(()=>setTimeout(()=>window.print(),250));
@@ -629,8 +631,8 @@ function ui(){
   $('inFlip').checked=cfg.flip;$('inNum').checked=cfg.num;$('inKey').checked=cfg.key;
   b.classList.toggle('flip',cfg.flip);b.classList.toggle('num',cfg.num);b.classList.toggle('showans',showAns&&cfg.mode!=='sky');
   $('ansBtn').innerHTML=showAns?ICON_HIDE:ICON_ANS;$('ansBtn').classList.toggle('on',showAns);
-  $('inBase').checked=cfg.base;if(document.activeElement!==$('gsUrl'))$('gsUrl').value=cfg.gsUrl||'';
-  $('chips').innerHTML=[...(cfg.mode==='text'&&cfg.base?SETS:[]).map(s=>({id:s.id,cat:s.cat})),...groupIds()].map(s=>`<button class="chip${cfg.off.includes(s.id)?' off':''}" data-id="${esc(s.id)}">${esc(s.cat)}</button>`).join('');
+  if(document.activeElement!==$('gsUrl'))$('gsUrl').value=cfg.gsUrl||'';
+  $('chips').innerHTML=[...(cfg.mode==='text'&&!gs.text.length?SETS:[]).map(s=>({id:s.id,cat:s.cat})),...groupIds()].map(s=>`<button class="chip${cfg.off.includes(s.id)?' off':''}" data-id="${esc(s.id)}">${esc(s.cat)}</button>`).join('');
 }
 function groupIds(){const seen=new Set(),out=[];const add=(rows,def,tag)=>rows.forEach(r=>{const g=r.g||def;if(!seen.has(g)){seen.add(g);out.push({id:'gs:'+g,cat:tag+g})}});
   if(cfg.mode==='photo')add(gs.photo,'시트 사진','🖼️ ');else add(gs.text,'시트 문제','📄 ');return out}
@@ -651,7 +653,6 @@ $('fileIn').onchange=async e=>{
   for(const f of files){const data=await shrink(f);if(!data)continue;const p={id:t++,name:f.name.replace(/\.[^.]+$/,''),data};photos.push(p);dbPut(p)}
   plist();buildSlides();ui();render();
 };
-$('inBase').onchange=e=>{cfg.base=e.target.checked;save();buildSlides();ui();render()};
 $('gsUrl').onchange=e=>{cfg.gsUrl=e.target.value.trim();save()};
 $('gsLoad').onclick=()=>{cfg.gsUrl=$('gsUrl').value.trim();save();loadSheet(false)};
 $('gsOpen').onclick=()=>{const id=sheetIdOf($('gsUrl').value);if(id)window.open(`https://docs.google.com/spreadsheets/d/${id}/edit`,'_blank')};
