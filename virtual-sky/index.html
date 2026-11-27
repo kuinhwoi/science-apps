@@ -123,7 +123,7 @@ body.m-sky #empty{display:none!important}
 
 <div class="hud" id="hTop"><h1 id="ttl"></h1><div class="sub" id="sub"></div></div>
 <div class="hud" id="hBot"><div class="l1">망원경으로 관찰하고, 무엇인지 맞혀 보세요!</div><div class="l2" id="hint"></div></div>
-<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.4 (2026.11.27)</div>
+<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.5 (2026.11.27)</div>
 
 <div id="tabs">
   <button class="tab" data-m="sky">🌌 가상 밤하늘</button>
@@ -548,7 +548,8 @@ async function loadSheet(quiet){
   buildSlides();ui();render(false,false);
 }
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-function numbered(sl){if(!sl._nums||sl._nums.length!==sl.items.length)sl._nums=shuffle(sl.items.map((_,i)=>i+1));return sl.items.map((it,i)=>({...it,n:sl._nums[i]}))}
+/* 문제 번호 = 시트에 적은 순서 (위치만 무작위) */
+function numbered(sl){return sl.items.map((it,i)=>({...it,n:i+1}))}
 /* w×h 영역에 지름 d인 것 n개를 겹치지 않게 무작위로 (ans: 정답 칸 자리) */
 function scatter(n,w,h,d,ans){
   for(let pad=1.15;pad>=.85;pad-=.1){
