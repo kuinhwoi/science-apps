@@ -121,7 +121,7 @@ body.m-sky #empty{display:none!important}
 
 <div class="hud" id="hTop"><h1 id="ttl"></h1><div class="sub" id="sub"></div></div>
 <div class="hud" id="hBot"><div class="l1">망원경으로 관찰하고, 무엇인지 맞혀 보세요!</div><div class="l2" id="hint"></div></div>
-<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.1 (2026.11.27)</div>
+<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.2 (2026.11.27)</div>
 
 <div id="tabs">
   <button class="tab" data-m="sky">🌌 가상 밤하늘</button>
@@ -452,25 +452,25 @@ function answer(x,y,name,ex){
 /* ================= 글자 퀴즈 (한 장에 5문제 · 줄바꿈은 /) ================= */
 const Q=(a,c)=>({a,c});
 const SETS=[
- {id:'p1',cat:'태양계 ①',hint:'보기: 수성 · 금성 · 화성 · 목성 · 토성',items:[
+ {id:'p1',cat:'태양계 ①',hint:'',items:[
    Q('수성','달과 비슷/낮과 밤의 온도차가 큼'),Q('금성','샛별/두꺼운 이산화 탄소 대기'),Q('화성','물이 흐른 자국/올림포스 화산'),
    Q('목성','가장 큰 행성/줄무늬/대적점'),Q('토성','고리, 줄무늬/약간 찌그러짐')]},
- {id:'p2',cat:'태양계 ②',hint:'보기: 지구 · 천왕성 · 해왕성 · 소행성 · 혜성',items:[
+ {id:'p2',cat:'태양계 ②',hint:'',items:[
    Q('천왕성','자전축이/누워 있음'),Q('소행성','모양이 불규칙/화성과 목성 사이'),Q('해왕성','태양에서 가장 먼 행성/대흑점'),
    Q('지구','액체 상태의 물/생명체가 사는 행성'),Q('혜성','얼음과 먼지/태양 반대쪽으로 꼬리')]},
- {id:'sun',cat:'태양과 달',hint:'보기: 흑점 · 쌀알 무늬 · 홍염 · 코로나 · 달의 바다',items:[
+ {id:'sun',cat:'태양과 달',hint:'',items:[
    Q('흑점','태양 표면의 어두운 점/주변보다 온도가 낮음'),Q('쌀알 무늬','태양 표면의 작은 무늬/대류 때문에 생김'),Q('홍염','태양 가장자리/불꽃처럼 솟아오름'),
    Q('코로나','개기 일식 때 보임/태양의 바깥 대기'),Q('달의 바다','달 표면의 어두운 부분/평평한 지형')]},
- {id:'star',cat:'별의 거리와 밝기',hint:'보기: 연주 시차 · 겉보기 등급 · 절대 등급 · 광년 · 파섹',items:[
+ {id:'star',cat:'별의 거리와 밝기',hint:'',items:[
    Q('연주 시차','지구의 공전 때문에 생김/가까운 별일수록 큼'),Q('겉보기 등급','눈에 보이는 밝기/숫자가 작을수록 밝음'),Q('절대 등급','10 pc 거리에 있다고 할 때의 밝기/별의 실제 밝기'),
    Q('광년','빛이 1년 동안/가는 거리'),Q('파섹 (pc)','연주 시차가 1″인 별까지의 거리/약 3.26광년')]},
- {id:'gal',cat:'은하와 우주',hint:'보기: 우리은하 · 은하수 · 성운 · 산개 성단 · 구상 성단',items:[
+ {id:'gal',cat:'은하와 우주',hint:'',items:[
    Q('우리은하','태양계가 속한 은하/막대 나선 모양'),Q('은하수','밤하늘의 희뿌연 띠/우리은하의 일부'),Q('성운','가스와 먼지 구름/별이 태어나는 곳'),
    Q('산개 성단','젊은 별들이 엉성하게 모임/파란 별이 많음'),Q('구상 성단','늙은 별들이 공 모양으로/빽빽하게 모임')]},
- {id:'space',cat:'우주 탐사',hint:'보기: 허블 · 제임스 웹 · 다누리 · 누리호 · 국제 우주 정거장',items:[
+ {id:'space',cat:'우주 탐사',hint:'',items:[
    Q('허블 우주 망원경','1990년 발사/지구 궤도의 우주 망원경'),Q('제임스 웹 우주 망원경','2021년 발사/적외선으로 관측'),Q('다누리','우리나라 첫 달 궤도선/2022년 발사'),
    Q('누리호','우리 기술로 만든/우주 발사체'),Q('국제 우주 정거장','사람이 머무는/우주 실험실 (ISS)')]},
- {id:'tel',cat:'망원경',hint:'보기: 대물렌즈 · 접안렌즈 · 경통 · 가대 · 파인더',items:[
+ {id:'tel',cat:'망원경',hint:'',items:[
    Q('대물렌즈','빛을 모으는 렌즈/클수록 밝게 보임'),Q('접안렌즈','눈을 대는 렌즈/상을 확대함'),Q('경통','렌즈를 고정하는/긴 통'),
    Q('가대','망원경을 받치고/방향을 조절함'),Q('파인더','넓은 범위를 보며/천체를 찾음')]},
 ];
@@ -503,7 +503,7 @@ function buildSlides(){
   const keep=k=>{const m=new Map();ST[k].slides.forEach(s=>m.set(keyOf(s),s));return m};
   const reuse=(m,s)=>{const o=m.get(keyOf(s));if(o){s._pos=o._pos;s._nums=o._nums;s._asp=o._asp}return s};
   const mt=keep('text'),mp=keep('photo');
-  const tSheet=group(gs.text,r=>({a:r.a,lines:r.h}),its=>'보기: '+its.map(i=>i.a).join(' · '),'시트 문제');
+  const tSheet=group(gs.text,r=>({a:r.a,lines:r.h}),()=>'','시트 문제');
   /* 시트에 글자 문제가 있으면 시트 문제로, 없으면(인터넷이 안 되고 저장된 것도 없을 때) 앱에 든 기본 문제로 */
   ST.text.slides=(tSheet.length?tSheet:SETS).filter(s=>!cfg.off.includes(s.id)).map(s=>reuse(mt,s));
   const pSheet=group(gs.photo,r=>({a:r.a,img:r.u}),()=>'누구일까요? 무엇일까요?','시트 사진');
