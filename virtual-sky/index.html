@@ -9,53 +9,219 @@
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#02030a;overflow:hidden;font-family:'Noto Sans KR',system-ui,sans-serif;color:#fff}
-canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block}
 body.idle{cursor:none}
-.btns{position:fixed;right:1.2vh;top:1.2vh;display:flex;gap:.8vh;transition:opacity .4s}
-body.idle .btns{opacity:0;pointer-events:none}
+.btns{position:fixed;right:1.2vh;top:1.2vh;display:flex;gap:.8vh;transition:opacity .4s;z-index:5}
+body.idle .btns,body.idle #tabs{opacity:0;pointer-events:none}
 .btn{font:700 max(14px,1.7vh) 'Noto Sans KR',sans-serif;color:#dfe6ff;background:rgba(20,28,60,.75);border:1.5px solid rgba(160,180,255,.45);border-radius:999px;padding:.6vh 1.1vh;cursor:pointer;line-height:0}
 .ic{width:1.5em;height:1.5em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 #setBtn.on,#ansBtn.on{background:rgba(70,90,170,.95);color:#fff}
 .btn:hover{background:rgba(40,56,110,.9)}
-#panel{position:fixed;right:1.2vh;top:6.5vh;width:min(420px,92vw);background:rgba(12,16,36,.96);border:1.5px solid rgba(160,180,255,.45);border-radius:14px;padding:16px 18px;display:none;font-size:16px;line-height:1.5;color:#e8ecff}
+body.m-sky .qonly{display:none!important}
+body.m-photo .s-baseonly{display:none!important}
+
+/* 메뉴 탭 */
+#tabs{position:fixed;left:50%;top:1.2vh;transform:translateX(-50%);display:flex;gap:.4vh;padding:.4vh;background:rgba(12,16,36,.8);border:1.5px solid rgba(160,180,255,.45);border-radius:999px;z-index:5;transition:opacity .4s}
+.tab{font:700 max(14px,1.8vh) 'Noto Sans KR',sans-serif;color:#aab3dd;background:transparent;border:0;border-radius:999px;padding:.6vh 1.8vh;cursor:pointer;white-space:nowrap}
+.tab:hover{color:#fff}
+.tab.on{background:rgba(70,90,170,.95);color:#fff}
+
+#panel{position:fixed;right:1.2vh;top:6.5vh;width:min(440px,92vw);max-height:90vh;overflow:auto;background:rgba(12,16,36,.97);border:1.5px solid rgba(160,180,255,.45);border-radius:14px;padding:16px 18px;display:none;font-size:16px;line-height:1.5;color:#e8ecff;z-index:6}
 #panel.show{display:block}
 #panel h3{margin:0 0 6px;font-size:19px}
+#panel h4{margin:16px 0 4px;font-size:16px;padding-top:10px;border-top:1px solid rgba(160,180,255,.3)}
 #panel label{display:block;margin-top:12px;font-weight:700}
 #panel input[type=range]{width:100%}
-#panel .row{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700}
+#panel .row{display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:700}
 #panel small{display:block;color:#aab3dd;font-weight:500;margin-top:2px}
 #panel .keys{margin-top:12px;padding-top:10px;border-top:1px solid rgba(160,180,255,.3);color:#aab3dd;font-size:14px}
+.sec{display:none}
+body.m-sky .s-sky,body.m-text .s-text,body.m-photo .s-photo,body.m-text .s-q,body.m-photo .s-q{display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font:700 14px 'Noto Sans KR',sans-serif;padding:4px 10px;border-radius:999px;border:1.5px solid rgba(160,180,255,.45);background:rgba(70,90,170,.9);color:#fff;cursor:pointer}
+.chip.off{background:transparent;color:#8890b8;text-decoration:line-through}
+.pbtn{font:700 15px 'Noto Sans KR',sans-serif;padding:7px 12px;border-radius:9px;border:1.5px solid rgba(160,180,255,.45);background:rgba(40,56,110,.9);color:#fff;cursor:pointer}
+.pbtn:hover{background:rgba(70,90,170,.95)}
+.prow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+#plist{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.ph-row{display:flex;align-items:center;gap:8px}
+#panel input[type=text]{width:100%;margin-top:6px;font:500 14px 'Noto Sans KR',sans-serif;padding:6px 8px;border-radius:6px;border:1px solid rgba(160,180,255,.45);background:#0a0e22;color:#fff}
+#gsStat{margin-top:6px!important}
+#gsStat.err{color:#ffb3b3!important}
+.ph-row img{width:44px;height:44px;object-fit:cover;border-radius:6px;background:#000}
+.ph-row input{flex:1;min-width:0;font:500 15px 'Noto Sans KR',sans-serif;padding:5px 8px;border-radius:6px;border:1px solid rgba(160,180,255,.45);background:#0a0e22;color:#fff}
+.ph-row button{font:700 13px 'Noto Sans KR',sans-serif;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,140,140,.5);background:transparent;color:#ffb3b3;cursor:pointer}
+
+/* 화면 글자 */
+.hud{position:fixed;pointer-events:none;text-shadow:0 0 1.2vh rgba(0,0,0,.9)}
+#hTop{left:3vh;top:2.5vh}
+#hTop h1{margin:0;font-weight:900;font-size:5vh;line-height:1.15}
+#hTop .sub{margin-top:.6vh;display:inline-block;font-weight:900;font-size:2.8vh;color:#ffe27a;background:rgba(10,12,30,.55);border:.3vh solid rgba(255,215,90,.75);border-radius:999px;padding:.2vh 1.6vh}
+#hTop .sub:empty{display:none}
+#hBot{left:3vh;bottom:2.2vh}
+#hBot .l1{font-weight:700;font-size:3vh;color:#cdd6ff}
+#hBot .l2{font-weight:700;font-size:2.6vh;color:#9fb0ee;margin-top:.4vh}
+#credit{right:2vh;bottom:2.2vh;font-weight:500;font-size:1.6vh;color:rgba(200,210,255,.5)}
+
+#stage{position:fixed;left:4vw;right:4vw;top:15vh;bottom:14vh;transition:opacity .25s}
+#stage.fade{opacity:0}
+body.m-sky #stage{display:none}
+
+.q{position:absolute;width:var(--d);height:var(--d);transform:translate(-50%,-50%)}
+.disc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transition:transform .5s}
+.disc.c{border-radius:50%;background:#222a35;border:calc(var(--d)*.012) solid #2f528f}
+body.flip .disc{transform:rotate(180deg)}
+.disc img{width:100%;height:100%;object-fit:contain;display:block}
+.clue{color:#aeabab;font-weight:500;font-size:calc(var(--d)*.078);line-height:1.28;text-align:center;padding:0 9%;word-break:keep-all}
+.no{display:none}
+body.num .clue .no{display:block}
+.pno{position:absolute;left:50%;top:0;transform:translate(-50%,-115%);width:4.4vh;height:4.4vh;border-radius:50%;border:.35vh solid rgba(255,215,90,.9);background:rgba(10,12,30,.6);color:#ffe27a;font-weight:900;font-size:2.8vh;align-items:center;justify-content:center}
+body.num .pno{display:flex}
+.ans{position:absolute;left:50%;top:100%;transform:translate(-50%,1vh);background:rgba(255,210,60,.96);color:#1b1300;border-radius:1vh;padding:.4vh 1.5vh .5vh;white-space:nowrap;display:none;z-index:3;font-weight:900;font-size:3.2vh;line-height:1.25;box-shadow:0 .5vh 2vh rgba(0,0,0,.5)}
+body.showans .ans{display:block}
+#empty{position:fixed;left:0;right:0;top:38vh;display:none;font-size:3vh;color:#cdd6ff;text-align:center;line-height:1.6;z-index:4}
+#empty .pbtn{font-size:2.4vh;padding:1vh 2.4vh;margin-top:1.5vh}
+body.m-sky #empty{display:none!important}
+
+@media (max-width:760px){
+  #tabs{left:1.2vh;right:1.2vh;top:calc(1.2vh + 46px);transform:none;justify-content:center}
+  .tab{padding:.6vh 1vh;font-size:14px}
+  #hTop{top:calc(1.2vh + 96px)}
+  #hTop h1{font-size:3.4vh}
+  #hTop .sub{font-size:2.2vh}
+  #stage{top:calc(1.2vh + 190px)}
+  #hBot{bottom:4vh;right:3vh}
+  #hBot .l1{font-size:2.2vh}
+  #hBot .l2{font-size:1.9vh}
+  #credit{bottom:1vh;left:3vh;right:3vh;text-align:right;font-size:1.3vh}
+}
+#printArea{display:none}
+@media print{
+  @page{size:A4 landscape;margin:8mm}
+  html,body{height:auto;overflow:visible;background:#fff;color:#000}
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block}
+  .pp{width:281mm;height:193mm;position:relative;page-break-after:always;break-after:page;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pp:last-child{page-break-after:auto;break-after:auto}
+  .pp .phd{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;font-size:11pt;font-weight:700;color:#333}
+  .pp .pfield{position:absolute;left:0;right:0;top:12mm;bottom:8mm}
+  .pp .ans{display:none!important}
+  .pp .pno{width:7mm;height:7mm;font-size:4.5mm;border:.5mm solid #000;background:#fff;color:#000;transform:translate(-50%,-120%)}
+  .pp .pft{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:9pt;color:#666}
+  .key{font-size:12pt;color:#000}
+  .key h2{font-size:18pt;margin:0 0 4mm}
+  .key table{width:100%;border-collapse:collapse}
+  .key td,.key th{border:.3mm solid #555;padding:2.2mm 3mm;text-align:left}
+  .key th{background:#eee}
+}
 </style>
 </head>
-<body>
+<body class="flip m-sky">
 <canvas id="c"></canvas>
+
+<div class="hud" id="hTop"><h1 id="ttl"></h1><div class="sub" id="sub"></div></div>
+<div class="hud" id="hBot"><div class="l1">망원경으로 관찰하고, 무엇인지 맞혀 보세요!</div><div class="l2" id="hint"></div></div>
+<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.0 (2026.11.27)</div>
+
+<div id="tabs">
+  <button class="tab" data-m="sky">🌌 가상 밤하늘</button>
+  <button class="tab" data-m="text">🔤 글자 퀴즈</button>
+  <button class="tab" data-m="photo">🖼️ 사진 퀴즈</button>
+</div>
+
+<div id="stage"></div>
+<div id="empty"></div>
+
 <div class="btns">
+  <button class="btn qonly" id="prevBtn" title="이전 장 (←)" aria-label="이전"><svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <button class="btn qonly" id="nextBtn" title="다음 장 (→)" aria-label="다음"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
   <button class="btn" id="ansBtn" title="정답 보기/숨기기 (A)" aria-label="정답"></button>
+  <button class="btn qonly" id="prnBtn" title="거꾸로 인쇄 (P)" aria-label="인쇄"><svg class="ic" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><path d="M7 14h10v7H7z"/></svg></button>
   <button class="btn" id="setBtn" title="설정 (S)" aria-label="설정"><svg class="ic" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6 1.6.7 2.2-1.5 2.4 2.4-1.5 2.2.7 1.6 2.6.5v3.4l-2.6.5-.7 1.6 1.5 2.2-2.4 2.4-2.2-1.5-1.6.7-.5 2.6h-3.4l-.5-2.6-1.6-.7-2.2 1.5-2.4-2.4 1.5-2.2-.7-1.6-2.6-.5v-3.4l2.6-.5.7-1.6-1.5-2.2 2.4-2.4 2.2 1.5 1.6-.7z"/><circle cx="12" cy="12" r="3.2"/></svg></button>
   <button class="btn" id="fsBtn" title="전체화면 (F)" aria-label="전체화면"><svg class="ic" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
 </div>
+
 <div id="panel">
-  <h3><svg class="ic" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6 1.6.7 2.2-1.5 2.4 2.4-1.5 2.2.7 1.6 2.6.5v3.4l-2.6.5-.7 1.6 1.5 2.2-2.4 2.4-2.2-1.5-1.6.7-.5 2.6h-3.4l-.5-2.6-1.6-.7-2.2 1.5-2.4-2.4 1.5-2.2-.7-1.6-2.6-.5v-3.4l2.6-.5.7-1.6-1.5-2.2 2.4-2.4 2.2 1.5 1.6-.7z"/><circle cx="12" cy="12" r="3.2"/></svg> 선생님 설정</h3>
-  <label>천체 크기: <span id="szV"></span>
-    <input type="range" id="inSize" min="1" max="10" step="1">
-    <small>5m 떨어져서 <b>맨눈으로는 점이나 얼룩으로만 보이고, 망원경으로 봐야 모양이 보이는</b> 크기로 맞춰 주세요. 화면이 클수록 작게.</small></label>
-  <div class="row"><input type="checkbox" id="inNum"> 천체 번호 보이기</div>
-  <label>움직임 빠르기: <span id="spV"></span>
-    <input type="range" id="inSpeed" min="0" max="3" step="1"></label>
-  <div class="keys">A: 정답 보기 · S: 설정 · F: 전체화면 · N: 번호 켜기/끄기<br>설정은 이 브라우저에 저장돼요</div>
+  <h3><svg class="ic" viewBox="0 0 24 24"><path d="M10.3 2.6h3.4l.5 2.6 1.6.7 2.2-1.5 2.4 2.4-1.5 2.2.7 1.6 2.6.5v3.4l-2.6.5-.7 1.6 1.5 2.2-2.4 2.4-2.2-1.5-1.6.7-.5 2.6h-3.4l-.5-2.6-1.6-.7-2.2 1.5-2.4-2.4 1.5-2.2-.7-1.6-2.6-.5v-3.4l2.6-.5.7-1.6-1.5-2.2 2.4-2.4 2.2 1.5 1.6-.7z"/><circle cx="12" cy="12" r="3.2"/></svg> 선생님 설정 · <span id="pMode"></span></h3>
+
+  <div class="sec s-sky">
+    <label>천체 크기: <span id="skV"></span>
+      <input type="range" id="inSky" min="1" max="10" step="1">
+      <small>5m 떨어져서 <b>맨눈으로는 점이나 얼룩으로만 보이고, 망원경으로 봐야 모양이 보이는</b> 크기로 맞춰 주세요. 화면이 클수록 작게. (단축키 −, +)</small></label>
+    <div class="row"><input type="checkbox" id="inSkyNum"> 천체 번호 보이기 (N)</div>
+    <label>움직임 빠르기: <span id="spV"></span>
+      <input type="range" id="inSpeed" min="0" max="3" step="1"></label>
+  </div>
+
+  <div class="sec s-q">
+    <label>크기: <span id="szV"></span>
+      <input type="range" id="inSize" min="1" max="10" step="1">
+      <small>3~5m 떨어져서 <b>맨눈으로는 알아보기 어렵고, 망원경으로 봐야 보이는</b> 크기로 맞춰 주세요. 크기를 바꿔도 위치는 그대로예요. (단축키 −, +)</small></label>
+    <div class="row"><input type="checkbox" id="inFlip"> 거꾸로 보이기 (R)</div>
+    <div class="row"><input type="checkbox" id="inNum"> 문제 번호 보이기 (N)</div>
+    <div class="prow"><button class="pbtn" id="shuf">위치 다시 섞기 (W)</button></div>
+  </div>
+
+  <div class="sec s-q">
+    <h4>구글 시트 연결</h4>
+    <small>시트에 문제·사진을 넣고 [불러오기]를 누르면 출제돼요. 시트는 '링크가 있는 모든 사용자(뷰어)'로 공유해 주세요.</small>
+    <input type="text" id="gsUrl" placeholder="구글 시트 주소를 붙여 넣으세요">
+    <div class="prow"><button class="pbtn" id="gsLoad">불러오기</button><button class="pbtn" id="gsOpen">시트 열기</button></div>
+    <small id="gsStat"></small>
+  </div>
+
+  <div class="sec s-q">
+    <h4>보여 줄 퀴즈</h4>
+    <div class="row s-baseonly"><input type="checkbox" id="inBase"> 기본 문제(7장)도 함께 내기</div>
+    <small>눌러서 켜고 끌 수 있어요.</small>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="sec s-photo">
+    <h4>사진 직접 추가</h4>
+    <small>구글 시트 말고 이 컴퓨터의 사진을 바로 넣을 수도 있어요. 인물·물건 사진을 넣으면 5장씩 퀴즈가 만들어져요. 이름 칸이 정답이 돼요. 사진은 이 컴퓨터 브라우저에만 저장돼요.</small>
+    <div class="prow"><button class="pbtn addPh">＋ 사진 고르기</button></div>
+    <div id="plist"></div>
+  </div>
+
+  <div class="sec s-q">
+    <h4>거꾸로 인쇄</h4>
+    <small>A4 가로 한 장에 5문제씩 뒤집혀 인쇄돼요. 위치는 인쇄할 때마다 새로 섞여요.</small>
+    <label>인쇄 크기: <span id="psV"></span>
+      <input type="range" id="inPSize" min="1" max="10" step="1"></label>
+    <div class="row"><input type="checkbox" id="inKey"> 마지막 장에 정답표 넣기</div>
+    <div class="prow"><button class="pbtn" id="prAll">전체 인쇄</button><button class="pbtn" id="prCur">이 장만 인쇄</button></div>
+  </div>
+
+  <div class="keys">1·2·3: 메뉴 바꾸기 · A: 정답 · −/+: 크기 · N: 번호 · S: 설정 · F: 전체화면<br><span class="qonly">← → / 스페이스: 다음 장 · W: 위치 섞기 · R: 거꾸로 · P: 인쇄<br></span>설정은 이 브라우저에 저장돼요</div>
 </div>
+<input type="file" id="fileIn" accept="image/*" multiple hidden>
+<div id="printArea"></div>
+
 <script>
 'use strict';
-const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cv=$('c'),ctx=cv.getContext('2d');
 let W=0,H=0,DPR=1;
-const SCALES=[.55,.65,.75,.87,1,1.15,1.32,1.5,1.75,2];
-const SPEEDS=[0,.5,1,1.6],SPEED_NAMES=['멈춤','느리게','보통','빠르게'];
-let cfg={size:5,num:true,speed:2};
-try{Object.assign(cfg,JSON.parse(localStorage.getItem('fakesky.v2')||'{}'))}catch(e){}
-function save(){try{localStorage.setItem('fakesky.v2',JSON.stringify(cfg))}catch(e){}}
-let showAns=false;
 const TAU=Math.PI*2;
 
+/* ================= 설정 ================= */
+// 가상 밤하늘 설정은 예전 앱과 같은 곳에 저장 (기존 설정 그대로 이어짐)
+const SCALES=[.55,.65,.75,.87,1,1.15,1.32,1.5,1.75,2];
+const SPEEDS=[0,.5,1,1.6],SPEED_NAMES=['멈춤','느리게','보통','빠르게'];
+let sky={size:5,num:true,speed:2};
+try{Object.assign(sky,JSON.parse(localStorage.getItem('fakesky.v2')||'{}'))}catch(e){}
+function saveSky(){try{localStorage.setItem('fakesky.v2',JSON.stringify(sky))}catch(e){}}
+// 퀴즈 설정
+let cfg={mode:'sky',size:1,phSize:1,psize:4,flip:true,num:false,off:[],key:true,base:true,gsUrl:'https://docs.google.com/spreadsheets/d/1cK8jgptvNjNnvnM7Oy4VtLaOnMRfL6et11ZzkFAZDrY/edit'};
+try{Object.assign(cfg,JSON.parse(localStorage.getItem('telquiz.v3')||'{}'))}catch(e){}
+function save(){try{localStorage.setItem('telquiz.v3',JSON.stringify(cfg))}catch(e){}}
+const DS=[.07,.085,.1,.12,.14,.165,.19,.22,.25,.28];        // 화면: 지름 = 화면 높이 × 값
+const PSIZES=[18,22,26,30,35,40,46,52,58,65];                // 인쇄: mm
+let showAns=false;
+
+/* ================= 가상 밤하늘 (원래 앱 그대로) ================= */
 /* ---------- 고정 난수 ---------- */
 let seed=20261126;
 function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
@@ -102,7 +268,7 @@ function dot(x,y,r,c){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.f
 const px=()=>1/DPR;
 
 /* ---------- 배경 ---------- */
-function sky(t){
+function skyBg(t){
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#01020a');g.addColorStop(.6,'#040820');g.addColorStop(1,'#0a1030');
   ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
   const drift=t*.003;
@@ -282,62 +448,275 @@ function answer(x,y,name,ex){
   ctx.fillStyle='#1b1300';ctx.font=`900 ${s}px 'Noto Sans KR'`;ctx.fillText(name,x,y+s*.72);
   ctx.font=`700 ${s*.58}px 'Noto Sans KR'`;ctx.fillStyle='#4a3a00';ctx.fillText(ex,x,y+s*1.65);ctx.restore();
 }
-function hud(){
-  ctx.save();ctx.textBaseline='top';ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=H*.012;
-  ctx.font=`900 ${H*.05}px 'Noto Sans KR'`;ctx.fillStyle='#fff';ctx.fillText('🔭 가상 밤하늘 관측소',H*.03,H*.025);
-  ctx.textBaseline='bottom';ctx.font=`700 ${H*.03}px 'Noto Sans KR'`;ctx.fillStyle='#cdd6ff';
-  ctx.fillText('망원경으로 관측하고, 무엇인지 맞혀 보세요!',H*.03,H*.935);
-  ctx.font=`700 ${H*.026}px 'Noto Sans KR'`;ctx.fillStyle='#9fb0ee';
-  ctx.fillText('보기:  행성 · 은하(나선·막대 나선·타원·불규칙) · 성운(방출·암흑·고리) · 성단(산개·구상) · 이중성 · 혜성 · 블랙홀',H*.03,H*.978);
-  ctx.textAlign='right';ctx.font=`500 ${H*.016}px 'Noto Sans KR'`;ctx.fillStyle='rgba(200,210,255,.5)';
-  ctx.fillText('제작: 과학교사 구인회 · v1.2 (2026.11.26)',W-H*.02,H*.935);
-  ctx.restore();
+
+
+/* ================= 글자 퀴즈 (한 장에 5문제 · 줄바꿈은 /) ================= */
+const Q=(a,c)=>({a,c});
+const SETS=[
+ {id:'p1',cat:'태양계 ①',hint:'보기: 수성 · 금성 · 화성 · 목성 · 토성',items:[
+   Q('수성','달과 비슷/낮과 밤의 온도차가 큼'),Q('금성','샛별/두꺼운 이산화 탄소 대기'),Q('화성','물이 흐른 자국/올림포스 화산'),
+   Q('목성','가장 큰 행성/줄무늬/대적점'),Q('토성','고리, 줄무늬/약간 찌그러짐')]},
+ {id:'p2',cat:'태양계 ②',hint:'보기: 지구 · 천왕성 · 해왕성 · 소행성 · 혜성',items:[
+   Q('천왕성','자전축이/누워 있음'),Q('소행성','모양이 불규칙/화성과 목성 사이'),Q('해왕성','태양에서 가장 먼 행성/대흑점'),
+   Q('지구','액체 상태의 물/생명체가 사는 행성'),Q('혜성','얼음과 먼지/태양 반대쪽으로 꼬리')]},
+ {id:'sun',cat:'태양과 달',hint:'보기: 흑점 · 쌀알 무늬 · 홍염 · 코로나 · 달의 바다',items:[
+   Q('흑점','태양 표면의 어두운 점/주변보다 온도가 낮음'),Q('쌀알 무늬','태양 표면의 작은 무늬/대류 때문에 생김'),Q('홍염','태양 가장자리/불꽃처럼 솟아오름'),
+   Q('코로나','개기 일식 때 보임/태양의 바깥 대기'),Q('달의 바다','달 표면의 어두운 부분/평평한 지형')]},
+ {id:'star',cat:'별의 거리와 밝기',hint:'보기: 연주 시차 · 겉보기 등급 · 절대 등급 · 광년 · 파섹',items:[
+   Q('연주 시차','지구의 공전 때문에 생김/가까운 별일수록 큼'),Q('겉보기 등급','눈에 보이는 밝기/숫자가 작을수록 밝음'),Q('절대 등급','10 pc 거리에 있다고 할 때의 밝기/별의 실제 밝기'),
+   Q('광년','빛이 1년 동안/가는 거리'),Q('파섹 (pc)','연주 시차가 1″인 별까지의 거리/약 3.26광년')]},
+ {id:'gal',cat:'은하와 우주',hint:'보기: 우리은하 · 은하수 · 성운 · 산개 성단 · 구상 성단',items:[
+   Q('우리은하','태양계가 속한 은하/막대 나선 모양'),Q('은하수','밤하늘의 희뿌연 띠/우리은하의 일부'),Q('성운','가스와 먼지 구름/별이 태어나는 곳'),
+   Q('산개 성단','젊은 별들이 엉성하게 모임/파란 별이 많음'),Q('구상 성단','늙은 별들이 공 모양으로/빽빽하게 모임')]},
+ {id:'space',cat:'우주 탐사',hint:'보기: 허블 · 제임스 웹 · 다누리 · 누리호 · 국제 우주 정거장',items:[
+   Q('허블 우주 망원경','1990년 발사/지구 궤도의 우주 망원경'),Q('제임스 웹 우주 망원경','2021년 발사/적외선으로 관측'),Q('다누리','우리나라 첫 달 궤도선/2022년 발사'),
+   Q('누리호','우리 기술로 만든/우주 발사체'),Q('국제 우주 정거장','사람이 머무는/우주 실험실 (ISS)')]},
+ {id:'tel',cat:'망원경',hint:'보기: 대물렌즈 · 접안렌즈 · 경통 · 가대 · 파인더',items:[
+   Q('대물렌즈','빛을 모으는 렌즈/클수록 밝게 보임'),Q('접안렌즈','눈을 대는 렌즈/상을 확대함'),Q('경통','렌즈를 고정하는/긴 통'),
+   Q('가대','망원경을 받치고/방향을 조절함'),Q('파인더','넓은 범위를 보며/천체를 찾음')]},
+];
+
+/* ================= 사진 (IndexedDB) ================= */
+let photos=[],db=null;
+function openDB(){return new Promise(res=>{try{const r=indexedDB.open('telquiz',1);r.onupgradeneeded=()=>r.result.createObjectStore('photos',{keyPath:'id'});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>res()}catch(e){res()}})}
+function dbAll(){return new Promise(res=>{if(!db)return res([]);try{const q=db.transaction('photos').objectStore('photos').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])}catch(e){res([])}})}
+function dbPut(p){if(!db)return;try{db.transaction('photos','readwrite').objectStore('photos').put(p)}catch(e){}}
+function dbDel(id){if(!db)return;try{db.transaction('photos','readwrite').objectStore('photos').delete(id)}catch(e){}}
+function shrink(file){return new Promise(res=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,900/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.86))};im.onerror=()=>res(null);im.src=fr.result};fr.onerror=()=>res(null);fr.readAsDataURL(file)})}
+
+/* ================= 장 목록 ================= */
+const ST={text:{slides:[],cur:0},photo:{slides:[],cur:0}};
+const CIRC='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+/* 구글 시트에서 불러온 것 (마지막으로 불러온 내용을 저장해 두고, 인터넷이 안 될 때 씀) */
+let gs={text:[],photo:[],at:''};
+try{Object.assign(gs,JSON.parse(localStorage.getItem('telquiz.gs')||'{}'))}catch(e){}
+/* 묶음 이름별로 모아서 5개씩 한 장 */
+function group(rows,mk,hintFn,prefix){
+  const order=[],by={};
+  rows.forEach(r=>{const g=r.g||prefix;if(!by[g]){by[g]=[];order.push(g)}by[g].push(mk(r))});
+  const out=[];
+  order.forEach(g=>{const its=by[g],n=Math.ceil(its.length/5);
+    for(let i=0;i<n;i++){const items=its.slice(i*5,i*5+5);out.push({id:'gs:'+g,cat:n>1?`${g} ${CIRC[i]||i+1}`:g,hint:hintFn(items),items,src:'sheet'})}});
+  return out;
+}
+const keyOf=s=>s.cat+'|'+s.items.map(i=>i.a+(i.img||'').slice(-40)).join(',');
+function buildSlides(){
+  const keep=k=>{const m=new Map();ST[k].slides.forEach(s=>m.set(keyOf(s),s));return m};
+  const reuse=(m,s)=>{const o=m.get(keyOf(s));if(o){s._pos=o._pos;s._nums=o._nums;s._asp=o._asp}return s};
+  const mt=keep('text'),mp=keep('photo');
+  const tSheet=group(gs.text,r=>({a:r.a,lines:r.h}),its=>'보기: '+its.map(i=>i.a).join(' · '),'시트 문제');
+  ST.text.slides=[...(cfg.base?SETS:[]),...tSheet].filter(s=>!cfg.off.includes(s.id)).map(s=>reuse(mt,s));
+  const pSheet=group(gs.photo,r=>({a:r.a,img:r.u}),()=>'누구일까요? 무엇일까요?','시트 사진');
+  const pMine=[];for(let i=0;i<photos.length;i+=5){const n=i/5;pMine.push({cat:'내 사진 '+(CIRC[n]||n+1),hint:'누구일까요? 무엇일까요?',items:photos.slice(i,i+5).map(ph=>({a:ph.name||'?',img:ph.data}))})}
+  ST.photo.slides=[...pSheet.filter(s=>!cfg.off.includes(s.id)),...pMine].map(s=>reuse(mp,s));
+  for(const k in ST){const s=ST[k];s.cur=Math.max(0,Math.min(s.cur,s.slides.length-1))}
+}
+/* ---------- 구글 시트 읽기 ---------- */
+function parseCSV(t){const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;else if(c===','){row.push(f);f=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f=''}
+    else f+=c}
+  if(f||row.length){row.push(f);rows.push(row)}
+  return rows}
+function sheetIdOf(u){u=(u||'').trim();const m=u.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);if(m)return m[1];return /^[a-zA-Z0-9_-]{25,}$/.test(u)?u:null}
+function imgUrl(u){u=(u||'').trim();const m=u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=|thumbnail\?id=)([a-zA-Z0-9_-]+)/);
+  return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200`:u}
+async function fetchTab(id,name){
+  const r=await fetch(`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(name)}`,{cache:'no-store'});
+  if(!r.ok)throw new Error('tab');const t=await r.text();if(/^\s*<(!doctype|html)/i.test(t))throw new Error('share');
+  return parseCSV(t).slice(1).map(r=>r.map(x=>String(x||'').trim()));
+}
+function gsStat(msg,err){$('gsStat').textContent=msg;$('gsStat').classList.toggle('err',!!err)}
+async function loadSheet(quiet){
+  const id=sheetIdOf(cfg.gsUrl);
+  if(!id){if(!quiet)gsStat(cfg.gsUrl?'시트 주소가 올바르지 않아요.':'시트 주소를 넣어 주세요.',true);return}
+  gsStat('불러오는 중…');
+  const [t,p]=await Promise.allSettled([fetchTab(id,'글자퀴즈'),fetchTab(id,'사진퀴즈')]);
+  if(t.status==='rejected'&&p.status==='rejected'){
+    gsStat((gs.at?`최근에 불러온 문제(${gs.at})로 출제하고 있어요. `:'')+'시트를 읽지 못했어요. 시트가 \'링크가 있는 모든 사용자(뷰어)\'로 공유되어 있는지, 인터넷이 되는지 확인해 주세요.',true);return}
+  const text=t.status==='fulfilled'?t.value.filter(r=>r[1]&&r.slice(2,5).some(Boolean)).map(r=>({g:r[0],a:r[1],h:r.slice(2,5).filter(Boolean)})):gs.text;
+  const photo=p.status==='fulfilled'?p.value.filter(r=>r[1]&&/^https?:\/\//i.test(r[2]||'')).map(r=>({g:r[0],a:r[1],u:imgUrl(r[2])})):gs.photo;
+  const d=new Date();gs={text,photo,at:`${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
+  try{localStorage.setItem('telquiz.gs',JSON.stringify(gs))}catch(e){}
+  gsStat(`글자 문제 ${text.length}개 · 사진 ${photo.length}장을 불러왔어요 (${gs.at})`+(t.status==='rejected'?' · \'글자퀴즈\' 탭을 못 찾았어요':'')+(p.status==='rejected'?' · \'사진퀴즈\' 탭을 못 찾았어요':''));
+  buildSlides();ui();render(false,false);
+}
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function numbered(sl){if(!sl._nums||sl._nums.length!==sl.items.length)sl._nums=shuffle([1,2,3,4,5].slice(0,sl.items.length));return sl.items.map((it,i)=>({...it,n:sl._nums[i]}))}
+/* w×h 영역에 지름 d인 것 n개를 겹치지 않게 무작위로 (ans: 정답 칸 자리) */
+function scatter(n,w,h,d,ans){
+  for(let pad=1.15;pad>=.85;pad-=.1){
+    for(let tryAll=0;tryAll<300;tryAll++){
+      const pts=[];let ok=true;
+      for(let i=0;i<n&&ok;i++){
+        const bw=Math.max(d,ans?ans[i]:0)*pad,bh=(d+(ans?ans.h:0))*pad;let placed=false;
+        for(let t=0;t<200;t++){
+          const x=bw/2+Math.random()*Math.max(0,w-bw),y=d/2+Math.random()*Math.max(0,h-bh);
+          if(pts.every(p=>Math.abs(p.x-x)>=(p.bw+bw)/2||Math.abs(p.y-y)>=(p.bh+bh)/2)){pts.push({x,y,bw,bh});placed=true;break}
+        }
+        if(!placed)ok=false;
+      }
+      if(ok)return pts;
+    }
+  }
+  return Array.from({length:n},(_,i)=>({x:w*((i%3)+.5)/3,y:h*(Math.floor(i/3)+.5)/2}));
+}
+function qHTML(it,x,y,unit){
+  if(it.img)return `<div class="q" style="left:${x}${unit};top:${y}${unit}"><div class="pno no">${it.n}</div><div class="disc"><img src="${it.img}" alt=""></div><div class="ans">${it.n}. ${esc(it.a)}</div></div>`;
+  const lines=(it.lines||it.c.split('/')).map(esc).join('<br>');
+  return `<div class="q" style="left:${x}${unit};top:${y}${unit}"><div class="disc c"><div class="clue"><span class="no">${it.n}번</span>${lines}</div></div><div class="ans">${it.n}. ${esc(it.a)}</div></div>`;
 }
 
-/* ---------- 반복 ---------- */
-let last=performance.now(),T=0;
-function frame(now){
-  const dt=Math.min(.1,(now-last)/1000);last=now;T+=dt*SPEEDS[cfg.speed];
-  const t=T,g=geo(),R=H*.011*SCALES[cfg.size-1];
-  sky(t);meteor(t);
-  const spots=OBJ.map(o=>{let [x,y]=g.P(o.x,o.y);const r=D[o.k](x,y,R,t);if(r)[x,y]=r;return[x,y]});
-  OBJ.forEach((o,i)=>{const [x,y]=spots[i],off=Math.max(o.ext*R,H*.012)+H*.035;
-    if(cfg.num)badge(x,y-off,i+1);
-    if(showAns)answer(x,y+Math.max(o.ext*R*.8,H*.015)+H*.012,o.name,o.ex)});
-  hud();
-  requestAnimationFrame(frame);
+/* ================= 화면 그리기 ================= */
+const MODE_INFO={
+  sky:{ttl:'🔭 가상 밤하늘 관측소',name:'가상 밤하늘'},
+  text:{ttl:'🔭 망원경 글자 퀴즈',name:'글자 퀴즈'},
+  photo:{ttl:'🔭 망원경 사진 퀴즈',name:'사진 퀴즈'},
+};
+const SKY_HINT='보기:  행성 · 은하(나선·막대 나선·타원·불규칙) · 성운(방출·암흑·고리) · 성단(산개·구상) · 이중성 · 혜성 · 블랙홀';
+const curSizeIdx=()=>cfg.mode==='photo'?cfg.phSize:cfg.size;
+function render(fade,fresh){
+  const st=$('stage'),m=cfg.mode;
+  $('ttl').textContent=MODE_INFO[m].ttl;
+  if(m==='sky'){$('sub').textContent='';$('hint').textContent=SKY_HINT;return}
+  const S=ST[m];
+  const go=()=>{
+    if(!S.slides.length){
+      st.innerHTML='';$('sub').textContent='';$('hint').textContent='';
+      $('empty').innerHTML=m==='photo'?'아직 사진이 없어요.<br>구글 시트의 \'사진퀴즈\' 탭에 사진 주소를 넣고 설정(S)에서 [불러오기]를 누르거나,<br>이 컴퓨터의 사진을 바로 넣어 주세요.<br><button class="pbtn addPh">＋ 사진 고르기</button>':'보여 줄 퀴즈가 없어요.<br>설정(S)에서 퀴즈를 켜 주세요.';
+      $('empty').style.display='block';return}
+    $('empty').style.display='none';
+    const sl=S.slides[S.cur],its=numbered(sl);
+    /* 무대 크기: 화면에 아직 안 그려졌으면(0) 창 크기로 계산 → 원이 한쪽 끝에 몰리지 않게 */
+    const w=st.clientWidth||innerWidth*.92,h=st.clientHeight||innerHeight*.71,d=H*DS[curSizeIdx()-1];
+    const okPos=ps=>ps&&ps.length===its.length&&ps.every(q=>isFinite(q.fx)&&isFinite(q.fy)&&q.fx>=0&&q.fx<=1&&q.fy>=0&&q.fy<=1);
+    st.style.setProperty('--d',d+'px');
+    /* 위치는 7단계 크기 기준으로 한 번만 정해 두고(비율), 크기를 바꿔도 그대로 둠 */
+    const asp=w/h;if(fresh||!okPos(sl._pos)||!sl._asp||Math.abs(Math.log(asp/sl._asp))>.25){sl._asp=asp;const D=H*DS[6];const ans=its.map(it=>(String(it.a).length+3)*H*.034+H*.03);ans.h=H*.05;
+      sl._pos=scatter(its.length,w,h,D,ans).map(p=>({fx:p.x/w,fy:p.y/h}))}
+    st.innerHTML=its.map((it,i)=>qHTML(it,sl._pos[i].fx*w,sl._pos[i].fy*h,'px')).join('');
+    $('sub').textContent=`${S.cur+1} / ${S.slides.length} · ${sl.cat}`;$('hint').textContent=sl.hint||'';
+    st.classList.remove('fade');
+  };
+  if(fade){st.classList.add('fade');setTimeout(go,220)}else go();
 }
-function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
-addEventListener('resize',resize);resize();
+function go(d){if(cfg.mode==='sky')return;const S=ST[cfg.mode];if(!S.slides.length)return;const n=Math.max(0,Math.min(S.slides.length-1,S.cur+d));if(n===S.cur)return;S.cur=n;showAns=false;ui();render(true,true)}
+function setMode(m){if(!MODE_INFO[m])return;cfg.mode=m;save();showAns=false;ui();requestAnimationFrame(()=>render(false,false))}
 
-/* ---------- 설정 ---------- */
-const $=id=>document.getElementById(id);
+/* ================= 인쇄 ================= */
+function doPrint(onlyCur){
+  if(cfg.mode==='sky')return;const S=ST[cfg.mode];if(!S.slides.length)return;
+  const list=onlyCur?[S.slides[S.cur]]:S.slides,d=PSIZES[cfg.psize-1],PW=281,PH=193-20-(cfg.num&&cfg.mode==='photo'?8:0);let h='';
+  list.forEach(sl=>{const its=numbered(sl),pts=scatter(its.length,PW,PH,d,null);
+    h+=`<section class="pp" style="--d:${d}mm"><div class="phd"><span>${esc(MODE_INFO[cfg.mode].ttl)} · ${esc(sl.cat)}</span><span>${esc(sl.hint||'')}</span></div><div class="pfield">${its.map((it,i)=>qHTML(it,pts[i].x,pts[i].y+(cfg.num&&it.img?8:0),'mm')).join('')}</div><div class="pft">거꾸로 인쇄되어 있어요. 망원경으로 보면 바로 보여요! · 제작: 과학교사 구인회</div></section>`});
+  if(cfg.key){h+=`<section class="pp key"><h2>정답표</h2><table><tr><th style="width:18%">퀴즈</th><th>1번</th><th>2번</th><th>3번</th><th>4번</th><th>5번</th></tr>${list.map(sl=>{const its=numbered(sl);return `<tr><td><b>${esc(sl.cat)}</b></td>${[1,2,3,4,5].map(n=>{const it=its.find(x=>x.n===n);return `<td>${it?esc(it.a):''}</td>`}).join('')}</tr>`}).join('')}</table></section>`}
+  $('printArea').innerHTML=h;
+  const imgs=[...$('printArea').querySelectorAll('img')].map(im=>im.complete?null:new Promise(r=>{im.onload=im.onerror=r})).filter(Boolean);
+  Promise.all(imgs).then(()=>setTimeout(()=>window.print(),250));
+}
+
+/* ================= 설정 화면 ================= */
 const ICON_ANS='<svg class="ic" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>';
 const ICON_HIDE='<svg class="ic" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/><path d="M4 20 20 4"/></svg>';
 function ui(){
-  $('inSize').value=cfg.size;$('inNum').checked=cfg.num;$('inSpeed').value=cfg.speed;
-  $('szV').textContent=cfg.size+' / 10';$('spV').textContent=SPEED_NAMES[cfg.speed];
-  $('ansBtn').innerHTML=(showAns?ICON_HIDE:ICON_ANS);$('ansBtn').classList.toggle('on',showAns);
+  const b=document.body;['sky','text','photo'].forEach(m=>b.classList.toggle('m-'+m,cfg.mode===m));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===cfg.mode));
+  $('pMode').textContent=MODE_INFO[cfg.mode].name;
+  $('inSky').value=sky.size;$('skV').textContent=sky.size+' / 10';$('inSkyNum').checked=sky.num;$('inSpeed').value=sky.speed;$('spV').textContent=SPEED_NAMES[sky.speed];
+  $('inSize').value=curSizeIdx();$('szV').textContent=curSizeIdx()+' / 10';$('inPSize').value=cfg.psize;$('psV').textContent=PSIZES[cfg.psize-1]+'mm';
+  $('inFlip').checked=cfg.flip;$('inNum').checked=cfg.num;$('inKey').checked=cfg.key;
+  b.classList.toggle('flip',cfg.flip);b.classList.toggle('num',cfg.num);b.classList.toggle('showans',showAns&&cfg.mode!=='sky');
+  $('ansBtn').innerHTML=showAns?ICON_HIDE:ICON_ANS;$('ansBtn').classList.toggle('on',showAns);
+  $('inBase').checked=cfg.base;if(document.activeElement!==$('gsUrl'))$('gsUrl').value=cfg.gsUrl||'';
+  $('chips').innerHTML=[...(cfg.mode==='text'&&cfg.base?SETS:[]).map(s=>({id:s.id,cat:s.cat})),...groupIds()].map(s=>`<button class="chip${cfg.off.includes(s.id)?' off':''}" data-id="${esc(s.id)}">${esc(s.cat)}</button>`).join('');
 }
-$('inSize').oninput=e=>{cfg.size=+e.target.value;save();ui()};
-$('inNum').onchange=e=>{cfg.num=e.target.checked;save()};
-$('inSpeed').oninput=e=>{cfg.speed=+e.target.value;save();ui()};
+function groupIds(){const seen=new Set(),out=[];const add=(rows,def,tag)=>rows.forEach(r=>{const g=r.g||def;if(!seen.has(g)){seen.add(g);out.push({id:'gs:'+g,cat:tag+g})}});
+  if(cfg.mode==='photo')add(gs.photo,'시트 사진','🖼️ ');else add(gs.text,'시트 문제','📄 ');return out}
+function plist(){
+  $('plist').innerHTML=photos.length?photos.map(p=>`<div class="ph-row" data-id="${p.id}"><img src="${p.data}" alt=""><input value="${esc(p.name)}" placeholder="정답 (예: 김OO 선생님)"><button>삭제</button></div>`).join(''):'<small>아직 추가한 사진이 없어요.</small>';
+}
+function sizeStep(d){
+  if(cfg.mode==='sky'){sky.size=Math.max(1,Math.min(10,sky.size+d));saveSky();ui();return}
+  const k=cfg.mode==='photo'?'phSize':'size';cfg[k]=Math.max(1,Math.min(10,cfg[k]+d));save();ui();render();
+}
+$('tabs').onclick=e=>{const t=e.target.closest('.tab');if(t)setMode(t.dataset.m)};
+$('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const id=b.dataset.id;cfg.off=cfg.off.includes(id)?cfg.off.filter(x=>x!==id):[...cfg.off,id];save();buildSlides();ui();render()};
+$('plist').oninput=e=>{const r=e.target.closest('.ph-row');if(!r)return;const p=photos.find(x=>x.id==r.dataset.id);if(p){p.name=e.target.value;dbPut(p);buildSlides();render()}};
+$('plist').onclick=e=>{if(e.target.tagName!=='BUTTON')return;const r=e.target.closest('.ph-row');const id=+r.dataset.id;photos=photos.filter(x=>x.id!==id);dbDel(id);plist();buildSlides();ui();render()};
+document.addEventListener('click',e=>{if(e.target.closest('.addPh'))$('fileIn').click()});
+$('fileIn').onchange=async e=>{
+  const files=[...e.target.files];e.target.value='';let t=Date.now();
+  for(const f of files){const data=await shrink(f);if(!data)continue;const p={id:t++,name:f.name.replace(/\.[^.]+$/,''),data};photos.push(p);dbPut(p)}
+  plist();buildSlides();ui();render();
+};
+$('inBase').onchange=e=>{cfg.base=e.target.checked;save();buildSlides();ui();render()};
+$('gsUrl').onchange=e=>{cfg.gsUrl=e.target.value.trim();save()};
+$('gsLoad').onclick=()=>{cfg.gsUrl=$('gsUrl').value.trim();save();loadSheet(false)};
+$('gsOpen').onclick=()=>{const id=sheetIdOf($('gsUrl').value);if(id)window.open(`https://docs.google.com/spreadsheets/d/${id}/edit`,'_blank')};
+$('inSky').oninput=e=>{sky.size=+e.target.value;saveSky();ui()};
+$('inSkyNum').onchange=e=>{sky.num=e.target.checked;saveSky()};
+$('inSpeed').oninput=e=>{sky.speed=+e.target.value;saveSky();ui()};
+$('inSize').oninput=e=>{cfg[cfg.mode==='photo'?'phSize':'size']=+e.target.value;save();ui();render()};
+$('inPSize').oninput=e=>{cfg.psize=+e.target.value;save();ui()};
+$('inFlip').onchange=e=>{cfg.flip=e.target.checked;save();ui()};
+$('inNum').onchange=e=>{cfg.num=e.target.checked;save();ui()};
+$('inKey').onchange=e=>{cfg.key=e.target.checked;save()};
+$('shuf').onclick=()=>render(true,true);
+$('prAll').onclick=()=>doPrint(false);$('prCur').onclick=()=>doPrint(true);
 function setToggle(){$('setBtn').classList.toggle('on',$('panel').classList.toggle('show'))}
 $('setBtn').onclick=setToggle;
 $('ansBtn').onclick=()=>{showAns=!showAns;ui()};
+$('prevBtn').onclick=()=>go(-1);$('nextBtn').onclick=()=>go(1);$('prnBtn').onclick=()=>doPrint(false);
 const de=document.documentElement;
 function fs(){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else if(de.requestFullscreen)de.requestFullscreen().catch(()=>{})}
 $('fsBtn').onclick=fs;if(!de.requestFullscreen)$('fsBtn').style.display='none';
 addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT'||e.ctrlKey||e.metaKey||e.altKey)return;
-  const k=e.key.toLowerCase();
-  if(k==='a'){showAns=!showAns;ui()}else if(k==='s')setToggle();else if(k==='f')fs();else if(k==='n'){cfg.num=!cfg.num;save();ui()}
+  const k=e.key.toLowerCase(),q=cfg.mode!=='sky';
+  if(k==='1')setMode('sky');else if(k==='2')setMode('text');else if(k==='3')setMode('photo');
+  else if(q&&(k==='arrowright'||k==='pagedown'||k===' '||k==='arrowdown')){e.preventDefault();go(1)}
+  else if(q&&(k==='arrowleft'||k==='pageup'||k==='arrowup'||k==='backspace')){e.preventDefault();go(-1)}
+  else if(k==='a'){showAns=!showAns;ui()}
+  else if(k==='-'||k==='_')sizeStep(-1);
+  else if(k==='='||k==='+')sizeStep(1);
+  else if(k==='n'){if(q){cfg.num=!cfg.num;save()}else{sky.num=!sky.num;saveSky()}ui()}
+  else if(k==='s')setToggle();else if(k==='f')fs();
+  else if(q&&k==='w')render(true,true);
+  else if(q&&k==='r'){cfg.flip=!cfg.flip;save();ui()}
+  else if(q&&k==='p'){e.preventDefault();doPrint(false)}
 });
 let idleT;function wake(){document.body.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>{if(!$('panel').classList.contains('show'))document.body.classList.add('idle')},3000)}
 addEventListener('pointermove',wake);addEventListener('pointerdown',wake);wake();
-ui();
-window.__sky={OBJ,setT:v=>{T=v}};
-(document.fonts?document.fonts.load("900 20px 'Noto Sans KR'"):Promise.resolve()).finally(()=>requestAnimationFrame(frame));
+
+/* ================= 반복 ================= */
+let last=performance.now(),T=0;
+function frame(now){
+  const dt=Math.min(.1,(now-last)/1000);last=now;
+  if(cfg.mode==='sky'){
+    T+=dt*SPEEDS[sky.speed];
+    const t=T,g=geo(),R=H*.011*SCALES[sky.size-1];
+    skyBg(t);meteor(t);
+    const spots=OBJ.map(o=>{let [x,y]=g.P(o.x,o.y);const r=D[o.k](x,y,R,t);if(r)[x,y]=r;return[x,y]});
+    OBJ.forEach((o,i)=>{const [x,y]=spots[i],off=Math.max(o.ext*R,H*.012)+H*.035;
+      if(sky.num)badge(x,y-off,i+1);
+      if(showAns)answer(x,y+Math.max(o.ext*R*.8,H*.015)+H*.012,o.name,o.ex)});
+  }else{T+=dt*.3;skyBg(T)}
+  requestAnimationFrame(frame);
+}
+let rT;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',()=>{resize();clearTimeout(rT);rT=setTimeout(()=>render(),200)});resize();
+
+/* ================= 시작 ================= */
+buildSlides();ui();
+openDB().then(dbAll).then(list=>{photos=(list||[]).sort((a,b)=>a.id-b.id);buildSlides();plist();ui();render()});
+plist();
+if(gs.at)gsStat(`최근에 불러온 문제(${gs.at})`);
+loadSheet(true);
+(document.fonts?document.fonts.load("900 20px 'Noto Sans KR'"):Promise.resolve()).finally(()=>{render();requestAnimationFrame(frame)});
+window.__q={st:ST,setMode,go:n=>{ST[cfg.mode].cur=n;render()}};
 </script>
 </body>
 </html>
