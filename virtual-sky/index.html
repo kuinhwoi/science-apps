@@ -123,7 +123,7 @@ body.m-sky #empty{display:none!important}
 
 <div class="hud" id="hTop"><h1 id="ttl"></h1><div class="sub" id="sub"></div></div>
 <div class="hud" id="hBot"><div class="l1">망원경으로 관찰하고, 무엇인지 맞혀 보세요!</div><div class="l2" id="hint"></div></div>
-<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.3 (2026.11.27)</div>
+<div class="hud" id="credit">제작: 과학교사 구인회 · 가상 밤하늘 관측소 v2.4 (2026.11.27)</div>
 
 <div id="tabs">
   <button class="tab" data-m="sky">🌌 가상 밤하늘</button>
@@ -215,10 +215,12 @@ let sky={size:5,num:true,speed:2};
 try{Object.assign(sky,JSON.parse(localStorage.getItem('fakesky.v2')||'{}'))}catch(e){}
 function saveSky(){try{localStorage.setItem('fakesky.v2',JSON.stringify(sky))}catch(e){}}
 // 퀴즈 설정
-let cfg={mode:'sky',size:1,phSize:1,psize:4,flip:true,num:false,off:[],key:true,base:true,gsUrl:'https://docs.google.com/spreadsheets/d/1cK8jgptvNjNnvnM7Oy4VtLaOnMRfL6et11ZzkFAZDrY/edit'};
+let cfg={mode:'sky',size:1,phSz:1,psize:4,flip:true,num:false,off:[],key:true,base:true,gsUrl:'https://docs.google.com/spreadsheets/d/1cK8jgptvNjNnvnM7Oy4VtLaOnMRfL6et11ZzkFAZDrY/edit'};
 try{Object.assign(cfg,JSON.parse(localStorage.getItem('telquiz.v3')||'{}'))}catch(e){}
 function save(){try{localStorage.setItem('telquiz.v3',JSON.stringify(cfg))}catch(e){}}
 const DS=[.07,.085,.1,.12,.14,.165,.19,.22,.25,.28];        // 화면: 지름 = 화면 높이 × 값
+/* 사진 퀴즈: 1단계 = 예전 1단계의 4분의 1 */
+const PH_DS=[.0175,.025,.035,.05,.07,.09,.12,.16,.21,.28];
 const PSIZES=[18,22,26,30,35,40,46,52,58,65];                // 인쇄: mm
 let showAns=false;
 
@@ -579,7 +581,7 @@ const MODE_INFO={
   photo:{ttl:'🔭 망원경 사진 퀴즈',name:'사진 퀴즈'},
 };
 const SKY_HINT='보기:  행성 · 은하(나선·막대 나선·타원·불규칙) · 성운(방출·암흑·고리) · 성단(산개·구상) · 이중성 · 혜성 · 블랙홀';
-const curSizeIdx=()=>cfg.mode==='photo'?cfg.phSize:cfg.size;
+const curSizeIdx=()=>cfg.mode==='photo'?cfg.phSz:cfg.size;
 function render(fade,fresh){
   const st=$('stage'),m=cfg.mode;
   $('ttl').textContent=MODE_INFO[m].ttl;
@@ -593,7 +595,7 @@ function render(fade,fresh){
     $('empty').style.display='none';
     const sl=S.slides[S.cur],its=numbered(sl);
     /* 무대 크기: 화면에 아직 안 그려졌으면(0) 창 크기로 계산 → 원이 한쪽 끝에 몰리지 않게 */
-    const w=st.clientWidth||innerWidth*.92,h=st.clientHeight||innerHeight*.71,d=H*DS[curSizeIdx()-1];
+    const w=st.clientWidth||innerWidth*.92,h=st.clientHeight||innerHeight*.71,d=H*(cfg.mode==='photo'?PH_DS:DS)[curSizeIdx()-1];
     const okPos=ps=>ps&&ps.length===its.length&&ps.every(q=>isFinite(q.fx)&&isFinite(q.fy)&&q.fx>=0&&q.fx<=1&&q.fy>=0&&q.fy<=1);
     st.style.setProperty('--d',d+'px');
     /* 위치는 7단계 크기 기준으로 한 번만 정해 두고(비율), 크기를 바꿔도 그대로 둠 */
@@ -643,7 +645,7 @@ function plist(){
 }
 function sizeStep(d){
   if(cfg.mode==='sky'){sky.size=Math.max(1,Math.min(10,sky.size+d));saveSky();ui();return}
-  const k=cfg.mode==='photo'?'phSize':'size';cfg[k]=Math.max(1,Math.min(10,cfg[k]+d));save();ui();render();
+  const k=cfg.mode==='photo'?'phSz':'size';cfg[k]=Math.max(1,Math.min(10,cfg[k]+d));save();ui();render();
 }
 $('tabs').onclick=e=>{const t=e.target.closest('.tab');if(t)setMode(t.dataset.m)};
 $('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const id=b.dataset.id;cfg.off=cfg.off.includes(id)?cfg.off.filter(x=>x!==id):[...cfg.off,id];save();buildSlides();ui();render()};
@@ -661,7 +663,7 @@ $('gsOpen').onclick=()=>{const id=sheetIdOf($('gsUrl').value);if(id)window.open(
 $('inSky').oninput=e=>{sky.size=+e.target.value;saveSky();ui()};
 $('inSkyNum').onchange=e=>{sky.num=e.target.checked;saveSky()};
 $('inSpeed').oninput=e=>{sky.speed=+e.target.value;saveSky();ui()};
-$('inSize').oninput=e=>{cfg[cfg.mode==='photo'?'phSize':'size']=+e.target.value;save();ui();render()};
+$('inSize').oninput=e=>{cfg[cfg.mode==='photo'?'phSz':'size']=+e.target.value;save();ui();render()};
 $('inPSize').oninput=e=>{cfg.psize=+e.target.value;save();ui()};
 $('inFlip').onchange=e=>{cfg.flip=e.target.checked;save();ui()};
 $('inNum').onchange=e=>{cfg.num=e.target.checked;save();ui()};
